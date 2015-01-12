@@ -1,45 +1,87 @@
-//
-// This file is part of the GNU ARM Eclipse distribution.
-// Copyright (c) 2014 Liviu Ionescu.
-//
-
-// ----------------------------------------------------------------------------
-
+/**
+ * Artificial cricket main file
+ *
+ */
 #include <stdio.h>
-#include "diag/Trace.h"
 
-// ----------------------------------------------------------------------------
-//
-// Standalone STM32F4 empty sample (trace via NONE).
-//
-// Trace support is enabled by adding the TRACE macro definition.
-// By default the trace messages are forwarded to the NONE output,
-// but can be rerouted to any device or completely suppressed, by
-// changing the definitions required in system/src/diag/trace_impl.c
-// (currently OS_USE_TRACE_ITM, OS_USE_TRACE_SEMIHOSTING_DEBUG/_STDOUT).
-//
+#include "stm32f4xx.h"
+#include "stm32f4xx_gpio.h"
+#include "stm32f4xx_tim.h"
+#include "stm32f4xx_rcc.h"
 
-// ----- main() ---------------------------------------------------------------
+void pwm_timer_setup(void);
 
-// Sample pragmas to cope with warnings. Please note the related line at
-// the end of this function, used to pop the compiler diagnostics status.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wmissing-declarations"
-#pragma GCC diagnostic ignored "-Wreturn-type"
+/**
+ * Configure the PWM timer to generate 40kHz
+ */
+void pwm_timer_setup(void)
+{
+    // Start up timer and GPIO clocks
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
-int main(int argc, char* argv[])
+    // Configure output pin
+    GPIO_InitTypeDef GPIO_initstruct;
+    GPIO_initstruct.GPIO_Pin = GPIO_Pin_6;
+    GPIO_initstruct.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_initstruct.GPIO_OType = GPIO_OType_PP;
+    GPIO_initstruct.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_initstruct.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_Init(GPIOC, &GPIO_initstruct);
+
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_TIM3);
+
+    // Timer base configuration
+    TIM_TimeBaseInitTypeDef TIM_initstruct;
+    TIM_initstruct.TIM_ClockDivision = 0;
+    TIM_initstruct.TIM_Prescaler = 0;
+    TIM_initstruct.TIM_Period = 1800;
+    TIM_initstruct.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseInit(TIM3, &TIM_initstruct);
+
+    // PWM Channel 1 configuration
+    TIM_OCInitTypeDef TIM_ocstruct;
+    TIM_ocstruct.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_ocstruct.TIM_OutputState = TIM_OutputState_Enable;
+    TIM_ocstruct.TIM_Pulse = TIM_initstruct.TIM_Period / 4;
+    TIM_ocstruct.TIM_OCPolarity = TIM_OCPolarity_High;
+    TIM_OC1Init(TIM3, &TIM_ocstruct);
+
+    // Activate TIM3 preloads
+    TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
+    TIM_ARRPreloadConfig(TIM3, ENABLE);
+
+    // Set 50% duty
+    TIM3->ARR = 900;
+
+    // Run timer
+    TIM_Cmd(TIM3, ENABLE);
+}
+
+/**
+ * Main function. Sets up pins and PRNG, then continuously outputs clicks
+ *
+ * @return Never returns.
+ */
+void main(void)
 {
     // At this stage the system clock should have already been configured
     // at high speed.
 
-    // Infinite loop
+    // Configure the assorted timers
+    pwm_timer_setup();
+    //markspace_timer_setup();
+    //call_timer_setup();
+
+    // Enable the randomness generator
+    //random_adjust_enable();
+
+    // Configure the switch input
+    //switch_setup();
+
+    // Do nothing. Everything proceeds in interrupts
     while (1)
     {
         // Add your code here.
     }
 }
-
-#pragma GCC diagnostic pop
-
-// ----------------------------------------------------------------------------
