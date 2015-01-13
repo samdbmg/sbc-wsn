@@ -5,57 +5,43 @@
 #include <stdio.h>
 
 #include "stm32f4xx.h"
-#include "stm32f4xx_gpio.h"
-#include "stm32f4xx_tim.h"
-#include "stm32f4xx_rcc.h"
 
-void pwm_timer_setup(void);
+#include "timer_config.h"
+
+
+// Counter for number of clicks to generate each time, and number so far
+uint8_t g_clicks_total;
+uint8_t g_clicks_progress;
 
 /**
- * Configure the PWM timer to generate 40kHz
+ * Handle mark space timer overflow and compare match to turn pulse on and off
  */
-void pwm_timer_setup(void)
+void TIM4_IRQHandler(void)
 {
-    // Start up timer and GPIO clocks
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+    if (SET == TIM_GetITStatus(TIM4, TIM_IT_CC1))
+    {
+        // Timer compare interrupt fired. Turn PWM on
+        TIM_Cmd(TIM3, ENABLE);
 
-    // Configure output pin
-    GPIO_InitTypeDef GPIO_initstruct;
-    GPIO_initstruct.GPIO_Pin = GPIO_Pin_6;
-    GPIO_initstruct.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_initstruct.GPIO_OType = GPIO_OType_PP;
-    GPIO_initstruct.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_initstruct.GPIO_Speed = GPIO_Speed_100MHz;
-    GPIO_Init(GPIOC, &GPIO_initstruct);
+        TIM_ClearITPendingBit(TIM4, TIM_IT_CC1);
+    }
+    else if (SET == TIM_GetITStatus(TIM4, TIM_IT_Update))
+    {
+        // Only other enabled interrupt is overflow, so overflow must have
+        // fired. PWM off.
+        TIM_Cmd(TIM3, DISABLE);
 
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_TIM3);
+        g_clicks_progress++;
 
-    // Timer base configuration
-    TIM_TimeBaseInitTypeDef TIM_initstruct;
-    TIM_initstruct.TIM_ClockDivision = 0;
-    TIM_initstruct.TIM_Prescaler = 0;
-    TIM_initstruct.TIM_Period = 1800;
-    TIM_initstruct.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(TIM3, &TIM_initstruct);
+        // Have we generated enough calls
+        if (g_clicks_progress > g_clicks_total)
+        {
+            // Disable the mark/space timer and wait until call timer triggers
+            //TIM_CMD(TIM4, DISABLE);
+        }
 
-    // PWM Channel 1 configuration
-    TIM_OCInitTypeDef TIM_ocstruct;
-    TIM_ocstruct.TIM_OCMode = TIM_OCMode_PWM1;
-    TIM_ocstruct.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_ocstruct.TIM_Pulse = TIM_initstruct.TIM_Period / 4;
-    TIM_ocstruct.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OC1Init(TIM3, &TIM_ocstruct);
-
-    // Activate TIM3 preloads
-    TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
-    TIM_ARRPreloadConfig(TIM3, ENABLE);
-
-    // Run timer
-    TIM_Cmd(TIM3, ENABLE);
-
-    // Set 50% duty
-    TIM_SetCompare1(TIM3, 900);
+        TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+    }
 }
 
 /**
@@ -73,7 +59,7 @@ void main(void)
 
     // Configure the assorted timers
     pwm_timer_setup();
-    //markspace_timer_setup();
+    markspace_timer_setup();
     //call_timer_setup();
 
     // Enable the randomness generator
