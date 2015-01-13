@@ -11,6 +11,8 @@
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_rcc.h"
 
+#include "timer_config.h"
+
 #define TIMER_BASE_FREQUENCY    72000000
 
 #define PWM_FREQUENCY           40000
@@ -21,6 +23,8 @@
 #define MARKSPACE_PSC           10     // To fit ticks in 16 bits, prescale is needed
 #define MARKSPACE_TICKS         TIMER_BASE_FREQUENCY/(MARKSPACE_FREQUENCY * MARKSPACE_PSC)
 #define MARKSPACE_COMPARE_VALUE 2 * MARKSPACE_TICKS/3
+
+#define CALL_TIMER_PSC          TIMER_BASE_FREQUENCY/1000000
 
 /**
  * Configure the PWM timer to generate 40kHz
@@ -44,7 +48,7 @@ void pwm_timer_setup(void)
 
     // Timer base configuration (TIM3, 16 bit GP timer)
     TIM_TimeBaseInitTypeDef TIM_initstruct;
-    TIM_initstruct.TIM_ClockDivision = 0;
+    TIM_initstruct.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_initstruct.TIM_Prescaler = 0;
     TIM_initstruct.TIM_Period = PWM_TICKS;
     TIM_initstruct.TIM_CounterMode = TIM_CounterMode_Up;
@@ -62,8 +66,7 @@ void pwm_timer_setup(void)
     TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
     TIM_ARRPreloadConfig(TIM3, ENABLE);
 
-    // Run timer
-    TIM_Cmd(TIM3, ENABLE);
+    // Timer will be enabled in ISR for TIM4 (mark-space) compare match
 }
 
 /**
@@ -76,8 +79,8 @@ void markspace_timer_setup(void)
 
     // Timer base configuration (TIM4, 16 bit GP timer)
     TIM_TimeBaseInitTypeDef TIM_initstruct;
-    TIM_initstruct.TIM_ClockDivision = 0;
-    TIM_initstruct.TIM_Prescaler = MARKSPACE_PSC;
+    TIM_initstruct.TIM_ClockDivision = TIM_CKD_DIV1;
+    TIM_initstruct.TIM_Prescaler = MARKSPACE_PSC-1;
     TIM_initstruct.TIM_Period = MARKSPACE_TICKS;
     TIM_initstruct.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM4, &TIM_initstruct);
@@ -107,6 +110,41 @@ void markspace_timer_setup(void)
     NVIC_compare_initstruct.NVIC_IRQChannelSubPriority = 1;
     NVIC_Init(&NVIC_compare_initstruct);
 
+    // Timer will be enabled in ISR for call timer (TIM2) overflow
+}
+
+/**
+ * Configure the timer to generate calls
+ *
+ * @param call_period_ms Time in milliseconds between call generations.
+ *                       Overflows after an hour
+ */
+void call_timer_setup(uint32_t call_period_ms)
+{
+    // Start up timer clock
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+    // Timer base configuration (TIM2, 32 bit GP timer)
+    TIM_TimeBaseInitTypeDef TIM_initstruct;
+    TIM_initstruct.TIM_ClockDivision = TIM_CKD_DIV1;
+    TIM_initstruct.TIM_Prescaler = CALL_TIMER_PSC-1;
+    TIM_initstruct.TIM_Period = call_period_ms * 1000;
+    TIM_initstruct.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseInit(TIM2, &TIM_initstruct);
+
+    TIM_ARRPreloadConfig(TIM4, ENABLE);
+
+    // Enable the overflow interrupt
+    TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+
+    // Enable the timer's interrupts in the interrupt controller
+    NVIC_InitTypeDef NVIC_compare_initstruct;
+    NVIC_compare_initstruct.NVIC_IRQChannel = TIM2_IRQn;
+    NVIC_compare_initstruct.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_compare_initstruct.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_compare_initstruct.NVIC_IRQChannelSubPriority = 1;
+    NVIC_Init(&NVIC_compare_initstruct);
+
     // Enable the timer
-    TIM_Cmd(TIM4, ENABLE);
+    TIM_Cmd(TIM2, ENABLE);
 }
