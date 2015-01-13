@@ -71,8 +71,6 @@ void pwm_timer_setup(void)
  */
 void markspace_timer_setup(void)
 {
-    uint32_t test1 = MARKSPACE_FREQUENCY;
-
     // Start up timer clock
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 

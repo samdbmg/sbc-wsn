@@ -9,7 +9,7 @@
 /* Function declarations */
 void pwm_timer_setup(void);
 void markspace_timer_setup(void);
-void TIM4_IRQHandler(void);
+void call_timer_setup(void);
 
 
 #endif /* TIMER_CONFIG_H_ */
