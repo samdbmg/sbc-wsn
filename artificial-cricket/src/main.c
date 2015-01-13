@@ -51,11 +51,11 @@ void pwm_timer_setup(void)
     TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
     TIM_ARRPreloadConfig(TIM3, ENABLE);
 
-    // Set 50% duty
-    TIM3->ARR = 900;
-
     // Run timer
     TIM_Cmd(TIM3, ENABLE);
+
+    // Set 50% duty
+    TIM_SetCompare1(TIM3, 900);
 }
 
 /**
@@ -65,8 +65,11 @@ void pwm_timer_setup(void)
  */
 void main(void)
 {
-    // At this stage the system clock should have already been configured
-    // at high speed.
+    RCC_ClocksTypeDef RCC_Clocks;
+
+    // Use SysTick as reference for the timer
+    RCC_GetClocksFreq(&RCC_Clocks);
+    SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000);
 
     // Configure the assorted timers
     pwm_timer_setup();
