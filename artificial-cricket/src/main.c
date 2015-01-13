@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "stm32f4xx.h"
+#include "trace.h"
 
 #include "timer_config.h"
 
@@ -62,6 +63,8 @@ void TIM2_IRQHandler(void)
         // Turn the LED on
         GPIO_WriteBit(GPIOD, GPIO_Pin_15, Bit_SET);
 
+        trace_printf("Calling...");
+
         // Reset the click progress count to zero
         g_clicks_progress = 0;
 
@@ -79,6 +82,8 @@ void TIM2_IRQHandler(void)
  */
 void main(void)
 {
+    trace_printf("Artificial Cricket Running\r\n");
+
     // Configure a board LED to illuminate while calling
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
 
