@@ -10,9 +10,15 @@
 #include "em_emu.h"
 #include "em_cmu.h"
 #include "em_chip.h"
+#include "em_rtc.h"
 
 // Number of ADC samples to reserve space for
 #define ADC_SAMPLE_COUNT 100
+
+// Calculate RTC wakeup timeout
+#define LFRCO_FREQ 32768
+#define WAKEUP_INTERVAL_MS 10000
+#define RTC_WAKEUP_TICKS (((LFRCO_FREQ * WAKEUP_INTERVAL_MS) / 1000) - 1)
 
 // Data buffers for ADC samples to be processed
 volatile uint16_t adc_data_buffer_1[ADC_SAMPLE_COUNT];
@@ -27,6 +33,44 @@ void dma_transfer_complete(unsigned int channel, bool primary, void* user);
 
 DMA_DESCRIPTOR_TypeDef dmaControlBlock[128] __attribute__ ((aligned(256)));
 
+/**
+ * Configure the RTC and start it, with interrupt enabled
+ */
+void rtc_init(void)
+{
+    // Start the low frequency oscillator LFRCO
+    CMU_OscillatorEnable(cmuOsc_LFRCO, true, true);
+
+    // Enable the RTC clock supply
+    CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFRCO);
+    CMU_ClockEnable(cmuClock_RTC, true);
+
+    RTC_Init_TypeDef rtc_init_data;
+    rtc_init_data.comp0Top = true;
+    rtc_init_data.debugRun = false;
+    rtc_init_data.enable = true;
+
+    RTC_CompareSet(0, RTC_WAKEUP_TICKS);
+
+    // Enable RTC interrupt and start it
+    RTC_IntEnable(RTC_IF_COMP0);
+    NVIC_EnableIRQ(RTC_IRQn);
+    RTC_Init(&rtc_init_data);
+
+}
+
+/**
+ * Handle an RTC wakeup by doing something with data
+ */
+void RTC_IRQHandler(void)
+{
+    // Clear pending interrupt
+    RTC_IntClear(RTC_IFC_COMP0);
+}
+
+/**
+ * Configure a timer to run at about 80kHz and drive the PRS
+ */
 void timer_init(void)
 {
     // Power the timer up
@@ -55,8 +99,14 @@ void timer_init(void)
     TIMER_Enable(TIMER0, true);
 }
 
+/**
+ * Fire up the ADC to be PRS triggered, and use DMA
+ */
 void adc_init(void)
 {
+    CMU_ClockEnable(cmuClock_ADC0, true);
+    CMU_ClockEnable(cmuClock_PRS, true);
+
     ADC_Init_TypeDef adc_init_data;
 
     adc_init_data.lpfMode = adcLPFilterBypass;
@@ -87,13 +137,11 @@ void adc_init(void)
 
     /* Manually set some calibration values */
     ADC0->CAL = (0x7C << _ADC_CAL_SINGLEOFFSET_SHIFT) | (0x1F << _ADC_CAL_SINGLEGAIN_SHIFT);
-
-    /* Enable interrupt on completed conversion */
-    ADC_IntEnable(ADC0, ADC_IEN_SINGLE);
-    NVIC_ClearPendingIRQ(ADC0_IRQn);
-    NVIC_EnableIRQ(ADC0_IRQn);
 }
 
+/**
+ * Configure DMA to continuously copy ADC results
+ */
 void dma_init(void)
 {
     // Enable clock supply
@@ -137,7 +185,11 @@ void dma_init(void)
 }
 
 /**
- * Handle a DMA transfer completing
+ * Handle DMA transfer completion
+ *
+ * @param channel  DMA channel where completion happened, not used
+ * @param primary  Whether primary or secondary channel completed
+ * @param user     Not used.
  */
 void dma_transfer_complete(unsigned int channel, bool primary, void* user)
 {
@@ -162,17 +214,21 @@ int main(void)
 {
     CHIP_Init();
 
+    CMU_HFRCOBandSet(cmuHFRCOBand_11MHz);
+
+    // Low energy module clock supply
+    CMU_ClockEnable(cmuClock_CORELE, true);
+
     // Start up the ADC, timer and DMA
     dma_init();
     adc_init();
     timer_init();
 
-
     // Start the RTC, we'll worry about time later
+    rtc_init();
 
     // Set an RTC alarm
 
-    // Drop to low power
     while (1)
     {
         EMU_EnterEM1();
