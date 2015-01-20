@@ -11,6 +11,8 @@
 #include "em_cmu.h"
 #include "em_chip.h"
 #include "em_rtc.h"
+#include "em_usart.h"
+#include "em_gpio.h"
 
 // Number of ADC samples to reserve space for
 #define ADC_SAMPLE_COUNT 100
@@ -24,8 +26,8 @@
 volatile uint16_t adc_data_buffer_1[ADC_SAMPLE_COUNT];
 volatile uint16_t adc_data_buffer_2[ADC_SAMPLE_COUNT];
 
-// Current data set buffer
-volatile uint16_t* adc_curent_data;
+// Currently full data set pointer
+volatile uint16_t* adc_valid_data = adc_data_buffer_1;
 
 // DMA complete callback to trigger processing
 DMA_CB_TypeDef callback;
@@ -64,6 +66,20 @@ void rtc_init(void)
  */
 void RTC_IRQHandler(void)
 {
+    // Stop the timer triggering ADC conversions
+    TIMER_Enable(TIMER0, false);
+
+    CMU_ClockEnable(cmuClock_USART1, true);
+
+    // Send the current data buffer
+    for (uint8_t i = 0; i < sizeof(adc_data_buffer_1); i++)
+    {
+        // Actual transfer disabled because ACK never happens
+        //USART_SpiTransfer(USART1, adc_valid_data[i]);
+    }
+
+    CMU_ClockEnable(cmuClock_USART1, false);
+
     // Clear pending interrupt
     RTC_IntClear(RTC_IFC_COMP0);
 }
@@ -197,14 +213,42 @@ void dma_transfer_complete(unsigned int channel, bool primary, void* user)
     DMA_RefreshPingPong(0, primary, false, NULL, NULL, ADC_SAMPLE_COUNT - 1, false);
 
     // Update the current data buffer
-    if (primary == true)
+    if (primary == false)
     {
-        adc_curent_data = adc_data_buffer_1;
+        adc_valid_data = adc_data_buffer_1;
     }
     else
     {
-        adc_curent_data = adc_data_buffer_2;
+        adc_valid_data = adc_data_buffer_2;
     }
+}
+
+void spi_init(void)
+{
+    CMU_ClockEnable(cmuClock_USART1, true);
+
+    // Pin config
+    GPIO_PinModeSet(gpioPortD, 6, gpioModeInput, 0);
+    GPIO_PinModeSet(gpioPortD, 7, gpioModePushPull, 0);
+    GPIO_PinModeSet(gpioPortC, 14, gpioModePushPull, 0);
+    GPIO_PinModeSet(gpioPortC, 15, gpioModePushPull, 0);
+
+    USART_InitSync_TypeDef spi_init_data;
+
+    spi_init_data.autoTx = false;
+    spi_init_data.baudrate = 10000;
+    spi_init_data.clockMode = usartClockMode0;
+    spi_init_data.databits = 8;
+    spi_init_data.enable = true;
+    spi_init_data.master = true;
+    spi_init_data.msbf = false;
+    spi_init_data.prsRxEnable = false;
+    spi_init_data.refFreq = 0;
+
+    // Turn SPI on
+    USART_InitSync(USART1, &spi_init_data);
+
+    CMU_ClockEnable(cmuClock_USART1, false);
 }
 
 /**
@@ -219,6 +263,11 @@ int main(void)
     // Low energy module clock supply
     CMU_ClockEnable(cmuClock_CORELE, true);
 
+    // GPIO pins clock supply
+    CMU_ClockEnable(cmuClock_GPIO, true);
+
+    spi_init();
+
     // Start up the ADC, timer and DMA
     dma_init();
     adc_init();
@@ -226,8 +275,6 @@ int main(void)
 
     // Start the RTC, we'll worry about time later
     rtc_init();
-
-    // Set an RTC alarm
 
     while (1)
     {
