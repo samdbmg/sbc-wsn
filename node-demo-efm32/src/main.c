@@ -248,6 +248,11 @@ void spi_init(void)
     // Turn SPI on
     USART_InitSync(USART1, &spi_init_data);
 
+    USART1->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_RXPEN | USART_ROUTE_CLKPEN |
+            USART_ROUTE_CLKPEN | USART_ROUTE_LOCATION_LOC3;
+
+    USART1->CTRL |= USART_CTRL_AUTOCS;
+
     CMU_ClockEnable(cmuClock_USART1, false);
 }
 
