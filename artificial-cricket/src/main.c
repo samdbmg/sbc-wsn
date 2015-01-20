@@ -16,6 +16,9 @@
 // Set this to zero to disable random adjust
 #define RANDOM_ENABLE 1
 
+// Initial number of clicks per call
+#define INITIAL_CLICK_COUNT 7
+
 /* Declare functions used only in this file */
 // Mark/space timer IRQ
 void TIM4_IRQHandler(void);
@@ -27,11 +30,11 @@ void EXTI0_IRQHandler(void);
 static void generate_call(void);
 
 // Counter for number of clicks to generate each time, and number so far
-static uint8_t g_clicks_total = 5;
+static uint8_t g_clicks_total = INITIAL_CLICK_COUNT;
 static volatile uint8_t g_clicks_progress;
 
 // Initial call timer value
-static const uint32_t g_initial_call_timer = 10000;
+static const uint32_t g_initial_call_timer = 1000;
 
 /**
  * Handle mark space timer overflow and compare match to turn pulse on and off
@@ -54,7 +57,7 @@ void TIM4_IRQHandler(void)
         g_clicks_progress++;
 
         // Have we generated enough calls
-        if (g_clicks_progress > g_clicks_total)
+        if (g_clicks_progress >= g_clicks_total)
         {
             // Disable the mark/space timer and wait until call timer triggers
             TIM_Cmd(TIM4, DISABLE);
@@ -111,13 +114,18 @@ static void generate_call(void)
         TIM2->ARR = (uint32_t)random_percentage_adjust(10, 25, (int32_t)TIM2->ARR,
                 (int32_t)g_initial_call_timer*1000);
 
+        // Number of clicks
+        g_clicks_total = (uint8_t)random_percentage_adjust(50, 30,
+                (int32_t)g_clicks_total, INITIAL_CLICK_COUNT);
+
         // Mark/space ratio and call lengths
         TIM4->ARR = (uint32_t)random_percentage_adjust(2,5,
                 (int32_t)TIM4->ARR, MARKSPACE_TICKS);
         TIM4->CCR1 = (uint32_t)random_percentage_adjust(2, 5,
                 (int32_t)TIM4->CCR1, MARKSPACE_COMPARE_VALUE);
 
-        trace_printf("Adjusted to %d, %d, %d\n", TIM2->ARR, TIM4->ARR, TIM4->CCR1);
+        trace_printf("Adjusted to %d, %d, %d, %d clicks\n", TIM2->ARR,
+                TIM4->ARR, TIM4->CCR1, g_clicks_total);
 
     }
 }
@@ -154,11 +162,6 @@ void main(void)
     pwm_timer_setup();
     markspace_timer_setup();
     call_timer_setup(g_initial_call_timer);
-
-    //random_adjust_enable();
-
-    // Configure the switch input
-    //switch_setup();
 
     // Go to sleep. Interrupts will do the rest
     __WFI();
