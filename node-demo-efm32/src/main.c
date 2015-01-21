@@ -17,10 +17,10 @@
 #include "adc_mode.h"
 #include "pin_mode.h"
 
-#define ADC_MODE
-//#define PINCHANGE_MODE
+//#define ADC_MODE
+#define PINCHANGE_MODE
 
-#define WAKEUP_INTERVAL_MS 1000
+#define WAKEUP_INTERVAL_MS 10000
 
 // Calculate RTC wakeup timeout
 #define LFRCO_FREQ 32768
