@@ -54,9 +54,11 @@ void rtc_handler(void)
     // Send the current data buffer
     for (uint8_t i = 0; i < ADC_SAMPLE_COUNT * 2; i++)
     {
-        // Actual transfer disabled because ACK never happens
-        //USART_SpiTransfer(USART1, adc_valid_data[i]);
+        USART_SpiTransfer(USART1, adc_valid_data[i]);
     }
+
+    // Restart timer
+    TIMER_Enable(TIMER0, true);
 }
 
 /**
@@ -116,7 +118,7 @@ void adc_init(void)
     adc_single_data.leftAdjust = false;
     adc_single_data.prsEnable = true;
     adc_single_data.prsSel = adcPRSSELCh0;
-    adc_single_data.reference = adcRef1V25;
+    adc_single_data.reference = adcRefVDD;
     adc_single_data.rep = false;
     adc_single_data.resolution = adcRes12Bit;
 

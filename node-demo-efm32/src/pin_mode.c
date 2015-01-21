@@ -87,12 +87,12 @@ void rtc_handler(void)
 {
     for (uint8_t i = 0; i < 4; i++)
     {
-        //USART_SpiTransfer(USART1, high_count >> (i*8));
+        USART_SpiTransfer(USART1, high_count >> (i*8));
     }
 
     for (uint8_t i = 0; i < 4; i++)
     {
-        //USART_SpiTransfer(USART1, low_count >> (i*8));
+        USART_SpiTransfer(USART1, low_count >> (i*8));
     }
 }
 

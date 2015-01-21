@@ -17,10 +17,10 @@
 #include "adc_mode.h"
 #include "pin_mode.h"
 
-//#define ADC_MODE
-#define PINCHANGE_MODE
+#define ADC_MODE
+//#define PINCHANGE_MODE
 
-#define WAKEUP_INTERVAL_MS 10000
+#define WAKEUP_INTERVAL_MS 1000
 
 // Calculate RTC wakeup timeout
 #define LFRCO_FREQ 32768
@@ -73,17 +73,17 @@ void spi_init(void)
     CMU_ClockEnable(cmuClock_USART1, true);
 
     // Pin config
-    GPIO_PinModeSet(gpioPortD, 6, gpioModeInput, 0);
-    GPIO_PinModeSet(gpioPortD, 7, gpioModePushPull, 0);
-    GPIO_PinModeSet(gpioPortC, 14, gpioModePushPull, 0);
-    GPIO_PinModeSet(gpioPortC, 15, gpioModePushPull, 0);
+    GPIO_PinModeSet(gpioPortD, 6, gpioModeInput, 0);     // MISO
+    GPIO_PinModeSet(gpioPortD, 7, gpioModePushPull, 0);  // MOSI
+    GPIO_PinModeSet(gpioPortC, 14, gpioModePushPull, 0); // CS
+    GPIO_PinModeSet(gpioPortC, 15, gpioModePushPull, 0); // CLK
 
     USART_InitSync_TypeDef spi_init_data;
 
     spi_init_data.autoTx = false;
-    spi_init_data.baudrate = 10000;
     spi_init_data.clockMode = usartClockMode0;
-    spi_init_data.databits = 8;
+    spi_init_data.databits = usartDatabits8;
+    spi_init_data.baudrate = 1000000;
     spi_init_data.enable = true;
     spi_init_data.master = true;
     spi_init_data.msbf = false;
@@ -93,10 +93,12 @@ void spi_init(void)
     // Turn SPI on
     USART_InitSync(USART1, &spi_init_data);
 
-    USART1->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_RXPEN | USART_ROUTE_CLKPEN |
-            USART_ROUTE_CLKPEN | USART_ROUTE_LOCATION_LOC3;
+    USART1->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_CLKPEN | USART_ROUTE_RXPEN |
+            USART_ROUTE_CSPEN | USART_ROUTE_LOCATION_LOC3;
 
     USART1->CTRL |= USART_CTRL_AUTOCS;
+
+    USART1->CMD |= USART_CMD_TXEN;
 
     CMU_ClockEnable(cmuClock_USART1, false);
 }
