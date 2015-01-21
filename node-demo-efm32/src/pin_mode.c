@@ -35,71 +35,6 @@ void pin_mode_init(void)
 }
 
 /**
- * Set up a pin to increment a counter when the state changes
- */
-void pinchange_init(void)
-{
-    // Activate PCNT clock
-    CMU_ClockEnable(cmuClock_PCNT0, true);
-
-    // Configure PC0 as an input pin
-    GPIO_PinModeSet(gpioPortC, 0, gpioModeInputPull, 0);
-
-    PCNT_Init_TypeDef pcnt_init_data;
-    pcnt_init_data.mode = pcntModeDisable;
-    pcnt_init_data.counter = 0;
-    pcnt_init_data.top = 0xFFFF;
-    pcnt_init_data.filter = false;
-    pcnt_init_data.cntEvent = pcntCntEventUp;
-    pcnt_init_data.s1CntDir = false;
-    pcnt_init_data.countDown = false;
-
-    PCNT_Enable(PCNT0, pcntModeDisable);
-    PCNT_Init(PCNT0, &pcnt_init_data);
-
-    // Turn the interrupt on to handle overflow
-    PCNT_IntEnable(PCNT0, PCNT_IF_OF);
-    NVIC_EnableIRQ(PCNT0_IRQn);
-
-    // Use location 2 (PC0) as source
-    PCNT0->ROUTE = PCNT_ROUTE_LOCATION_LOC2;
-
-    // Stop it, then kill the clock (we don't need it yet)
-    CMU_ClockEnable(cmuClock_PCNT0, false);
-
-    // Configure GPIO PC0 to fire an interrupt on a rising edge
-    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
-    GPIO_IntConfig(gpioPortC, 0, true, false, true);
-}
-
-void PCNT0_IRQHandler(void)
-{
-    // Clear overflow flag
-    PCNT_IntClear(PCNT0, PCNT_IF_OF);
-
-    // Tack on the top value to the buffer
-    pulse_buffer += PCNT_TopGet(PCNT0);
-}
-
-/**
- * Handle an incoming rising edge by triggering pulse count
- */
-void GPIO_EVEN_IRQHandler(void)
-{
-    NVIC_DisableIRQ(GPIO_EVEN_IRQn);
-    GPIO_IntClear(1);
-
-    CMU_ClockEnable(cmuClock_PCNT0, true);
-    CMU_ClockEnable(cmuClock_TIMER0, true);
-
-    timer_active = true;
-
-    TIMER_Enable(TIMER0, true);
-    PCNT_CounterSet(PCNT0, 0);
-    PCNT_Enable(PCNT0, pcntModeExtSingle);
-}
-
-/**
  * Handle an RTC timeout by setting some values
  */
 void rtc_handler(void)
@@ -113,6 +48,72 @@ void rtc_handler(void)
     {
         USART_SpiTransfer(USART1, low_count >> (i*8));
     }
+}
+
+/**
+ * Set up a pin to increment a counter when the state changes
+ */
+void pinchange_init(void)
+{
+    CMU_ClockEnable(cmuClock_PRS, true);
+
+    // Enable GPIO PC0 as input
+    GPIO_PinModeSet(gpioPortC, 0, gpioModeInputPull, 0);
+
+    // Configure GPIO PC0 to fire an interrupt on a rising edge
+    GPIO_IntConfig(gpioPortC, 0, true, false, true);
+
+    // Enable GPIO PRS sense
+    GPIO_InputSenseSet(GPIO_INSENSE_PRS | GPIO_INSENSE_INT,
+           GPIO_INSENSE_PRS | GPIO_INSENSE_INT);
+
+
+    CMU_ClockEnable(cmuClock_TIMER1, true);
+
+    const TIMER_InitCC_TypeDef timer_cc_data =
+    {
+      .eventCtrl  = timerEventRising,
+      .edge       = timerEdgeRising,
+      .prsSel     = timerPRSSELCh0,         /* Prs channel select channel 5*/
+      .cufoa      = timerOutputActionNone,  /* No action on counter underflow */
+      .cofoa      = timerOutputActionNone,  /* No action on counter overflow */
+      .cmoa       = timerOutputActionNone,  /* No action on counter match */
+      .mode       = timerCCModeCapture,     /* CC channel mode capture */
+      .filter     = false,                  /* No filter */
+      .prsInput   = true,                   /* CC channel PRS input */
+      .coist      = false,                  /* Comparator output initial state */
+      .outInvert  = false,
+    };
+
+    TIMER_InitCC(TIMER1, 1, &timer_cc_data);
+
+    const TIMER_Init_TypeDef timer_init_data =
+    {
+        .enable     = false,
+        .debugRun   = false,
+        .prescale   = timerPrescale1,
+        .clkSel     = timerClkSelCC1,
+        .fallAction = timerInputActionNone,
+        .riseAction = timerInputActionNone,
+        .mode       = timerModeUp,
+        .dmaClrAct  = false,
+        .quadModeX4 = false,
+        .oneShot    = false,
+        .sync       = true,
+    };
+
+    TIMER_Init(TIMER1, &timer_init_data);
+
+    // Set PRS to fire on pin change
+    PRS_SourceSignalSet(0, PRS_CH_CTRL_SOURCESEL_GPIOL,
+            PRS_CH_CTRL_SIGSEL_GPIOPIN0, prsEdgePos);
+
+    // Turn everything off again
+    CMU_ClockEnable(cmuClock_TIMER1, false);
+    CMU_ClockEnable(cmuClock_PRS, false);
+
+    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+
 }
 
 /**
@@ -132,7 +133,7 @@ void pin_timer_init(void)
         .fallAction = timerInputActionStop,
         .mode = timerModeUp,
         .oneShot = false,
-        .prescale = timerPrescale1024,
+        .prescale = timerPrescale2,
         .quadModeX4 = false,
         .riseAction = timerInputActionReloadStart,
         .sync = false,
@@ -144,12 +145,31 @@ void pin_timer_init(void)
     TIMER_Init(TIMER0, &timerInit);
 
     // Wrap around is about 1kHz
-    timer_1ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(1024 * 1);
-    timer_2ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(1024 * 0.5);
+    timer_1ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(2 * 1000);
+    timer_2ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(2 * 500);
     TIMER_TopSet(TIMER0, timer_1ms_ticks);
 
     // Power it down until we need it
     CMU_ClockEnable(cmuClock_TIMER0, false);
+}
+
+/**
+ * Handle an incoming rising edge by triggering pulse count
+ */
+void GPIO_EVEN_IRQHandler(void)
+{
+    NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+    GPIO_IntClear(1);
+
+    CMU_ClockEnable(cmuClock_TIMER1, true);
+    CMU_ClockEnable(cmuClock_PRS, true);
+    CMU_ClockEnable(cmuClock_TIMER0, true);
+
+    timer_active = true;
+
+    TIMER_Enable(TIMER0, true);
+    TIMER_IntEnable(TIMER1, TIMER_IF_CC0);
+    TIMER_CounterSet(TIMER1, 0);
 }
 
 /**
@@ -160,7 +180,7 @@ void TIMER0_IRQHandler(void)
     // Clear interrupt flag
     TIMER_IntClear(TIMER0, TIMER_IF_OF);
 
-    uint32_t value = pulse_buffer + PCNT_CounterGet(PCNT0);
+    uint32_t value = TIMER_CounterGet(TIMER1);
     pulse_buffer = 0;
 
     if (last_step == false)
@@ -170,7 +190,7 @@ void TIMER0_IRQHandler(void)
 
         // Save the counter value and reset it
         high_count = value;
-        PCNT_CounterSet(PCNT0, 0);
+        TIMER_CounterSet(TIMER1, 0);
 
         // Mark that next time we should stop counting
         last_step = true;
@@ -184,8 +204,8 @@ void TIMER0_IRQHandler(void)
 
         // Save the count value and turn it off
         low_count = value;
-        PCNT_Enable(PCNT0, pcntModeDisable);
-        CMU_ClockEnable(cmuClock_PCNT0, false);
+        CMU_ClockEnable(cmuClock_TIMER1, false);
+        CMU_ClockEnable(cmuClock_PRS, false);
 
         // Reset the state machine
         last_step = false;
