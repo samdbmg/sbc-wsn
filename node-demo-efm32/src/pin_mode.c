@@ -161,14 +161,14 @@ void pin_timer_init(void)
     TIMER_Init(TIMER0, &timerInit);
 
     // Wrap around is about 1kHz
-    timer_1ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(2 * 1000);
-    timer_2ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(2 * 500);
+    timer_1ms_ticks = get_ticks_from_ms(1);
+    timer_2ms_ticks = get_ticks_from_ms(2);
     TIMER_TopSet(TIMER0, timer_1ms_ticks);
 
     setup_detect_algorithm(timer_1ms_ticks, timer_2ms_ticks);
 
     // Also configure compare to fire after about 200us
-    TIMER_CompareSet(TIMER0, 0, timer_1ms_ticks/5);
+    TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(0.2));
 
     // Enable all the interrupts we need
     TIMER_IntEnable(TIMER0, TIMER_IEN_OF | TIMER_IEN_CC0);

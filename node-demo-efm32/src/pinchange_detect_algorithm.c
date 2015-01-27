@@ -6,17 +6,21 @@
 #include "em_cmu.h"
 #include "em_gpio.h"
 
+#include "pin_mode.h"
+
 // Detection algorithm parameters
-#define EDGE_THRESHOLD_LOWMODE    10
+#define EDGE_THRESHOLD_LOWMODE    20
 #define EDGE_LOWER_BOUND_HIGHMODE 30
 #define EDGE_UPPER_BOUND_HIGHMODE 45
 #define CLICKS_LOWER_BOUND        4
 #define CLICKS_UPPER_BOUND        9
 
 // Detection status possible values
-#define DETECT_WAITING 0
-#define DETECT_HIGH    1
-#define DETECT_LOW     2
+#define DETECT_IDLE       0
+#define DETECT_FIRST_HIGH 1
+#define DETECT_HIGH       2
+#define DETECT_LOW        3
+#define DETECT_WAIT       4
 
 // How many clicks has the algorithm seen in this call?
 static volatile uint8_t detected_clicks;
@@ -51,7 +55,7 @@ void setup_detect_algorithm(uint32_t ticks_1ms, uint32_t ticks_2ms)
  */
 bool get_detect_active(void)
 {
-    return detect_state != DETECT_WAITING;
+    return !((detect_state == DETECT_IDLE) || (detect_state == DETECT_WAIT));
 }
 
 /**
@@ -62,19 +66,58 @@ void initial_detect(void)
     // Disable the interrupt that triggers this until the algorithm finishes
     GPIO_IntDisable(1);
 
-    // Power up and enable the timers that make this work
-    CMU_ClockEnable(cmuClock_TIMER1, true);
-    CMU_ClockEnable(cmuClock_PRS, true);
-    CMU_ClockEnable(cmuClock_TIMER0, true);
+    // Check whether this is a new call or part of an ongoing
+    if (detect_state == DETECT_IDLE)
+    {
+        // OK, this is a new call hit. Start the timers, clear everything
+        detected_clicks = 0;
 
-    // Mark that detection is running
-    detect_state = DETECT_HIGH;
+        // Power up and enable the timers that make this work
+        CMU_ClockEnable(cmuClock_TIMER1, true);
+        CMU_ClockEnable(cmuClock_PRS, true);
+        CMU_ClockEnable(cmuClock_TIMER0, true);
 
-    // Turn the timers back on to actually run detection
-    TIMER_Enable(TIMER0, true);
-    TIMER_Enable(TIMER1, true);
-    TIMER_IntEnable(TIMER0, TIMER_IEN_CC0);
-    NVIC_EnableIRQ(TIMER0_IRQn);
+        // Reset timer top and compare values
+        TIMER_TopSet(TIMER0, get_ticks_from_ms(1000));
+        TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(0.2));
+
+        // Start all the timers running
+        TIMER_Enable(TIMER0, true);
+        TIMER_Enable(TIMER1, true);
+        TIMER_IntEnable(TIMER0, TIMER_IEN_CC0);
+        NVIC_EnableIRQ(TIMER0_IRQn);
+
+        // Mark that we're at the start of detection
+        detect_state = DETECT_FIRST_HIGH;
+    }
+    else if (detect_state == DETECT_WAIT)
+    {
+        // This is part of an ongoing call, has it started at least 1.5ms after last?
+        uint16_t value = TIMER_CounterGet(TIMER0);
+        if (value > get_ticks_from_ms(1.5))
+        {
+            // This can be part of the last call, so run detect again
+            detect_state = DETECT_HIGH;
+
+            // Set the timer TOP and CC0 to 1ms and 200us in future
+            uint32_t topvalue = TIMER_TopGet(TIMER0);
+            topvalue += get_ticks_from_ms(1);
+            TIMER_TopSet(TIMER0, topvalue);
+            uint32_t comparevalue = TIMER0->CC[0].CCV;
+            comparevalue += get_ticks_from_ms(0.2);
+            TIMER_CompareSet(TIMER0, 0, comparevalue);
+
+            // Re-enable CC0 and clear edge count
+            TIMER_IntEnable(TIMER0, TIMER_IEN_CC0);
+            TIMER_CounterSet(TIMER1, 0);
+        }
+        else
+        {
+            // If not its too early, ignore as a spurious wake (noise?)
+            // Turn interrupt back on and wait for another
+            GPIO_IntEnable(1);
+        }
+    }
 }
 
 /**
@@ -88,7 +131,31 @@ void short_timeout(void)
     {
         // We're not getting continuous 40kHz pulses, so this is probably a
         // spurious wakeup from noise
-        disable_timers();
+        if (detect_state == DETECT_FIRST_HIGH)
+        {
+            // At this point we can just reset everything and go idle
+            detected_clicks = 0;
+            detect_state = DETECT_IDLE;
+
+            tick_recorder = 0;
+
+            // Power down the timers and re-arm the edge interrupt
+            disable_timers();
+        }
+        else if (detect_state == DETECT_HIGH)
+        {
+            // Go and wait for a rising edge, but keep the timer going for timeout
+            detect_state = DETECT_WAIT;
+
+            // Clear the edge counter since this one was noise
+            TIMER_CounterSet(TIMER1, 0);
+
+            // Extend the time we will wait for the next click to be 2.5ms total
+            TIMER_TopSet(TIMER0, get_ticks_from_ms(2.5));
+
+            // Re-arm rising edge interrupt
+            GPIO_IntEnable(1);
+        }
     }
     else
     {
@@ -107,86 +174,112 @@ void full_timeout(void)
     ticks_array[tick_recorder] = value;
     tick_recorder++;
 
-    // Are we expecting a click or silence?
-    if (detect_state == DETECT_HIGH)
+    if (detect_state == DETECT_HIGH || detect_state == DETECT_FIRST_HIGH)
     {
-        // Expected a click, check we got enough edges
+        // Check we got enough edges for a 40kHz click
         if ((value >= EDGE_LOWER_BOUND_HIGHMODE) &&
                 (value <= EDGE_UPPER_BOUND_HIGHMODE) &&
                 (detected_clicks <= CLICKS_UPPER_BOUND))
         {
+            // Next we need to detect a period of silence
             detect_state = DETECT_LOW;
 
-            // Reconfigure the timer to count for 2ms
-            TIMER_TopSet(TIMER0, timer_ticks_2ms);
+            // Reset the timer and counter
             TIMER_CounterSet(TIMER0, 0);
-
-            // Reset the counter
             TIMER_CounterSet(TIMER1, 0);
         }
         else
         {
-            // Check if we got enough calls to record this one
-            if (detected_clicks >= CLICKS_LOWER_BOUND)
+            // We didn't get enough edges to count as a call, so reset
+            detect_state = DETECT_IDLE;
+
+            detected_clicks = 0;
+
+            tick_recorder = 0;
+
+            // If we got a valid call anyway, record it
+            if (detected_clicks >= CLICKS_LOWER_BOUND &&
+                    detected_clicks <= CLICKS_UPPER_BOUND)
             {
                 record_call();
             }
 
-            // Reset and shut down
+            // Power down the timers and re-arm the edge interrupt
             disable_timers();
         }
     }
-    else
+    else if (detect_state == DETECT_LOW)
     {
-        // Expected no click, check we got silence (ish)
+        // Check if its been quiet...
         if (value <= EDGE_THRESHOLD_LOWMODE)
         {
-            // Record that we got a valid call
+            // Switch to wait state and wait for next click in call
+            detect_state = DETECT_WAIT;
+
+            // Record the click we just got
             detected_clicks++;
 
-            // Set up for high side measurement
-            detect_state = DETECT_HIGH;
+            // Extend the timer top value to 2.5ms timeout
+            TIMER_TopSet(TIMER0, get_ticks_from_ms(2.5));
 
-            // Reconfigure the timer to count for 1ms
-            TIMER_TopSet(TIMER0, timer_ticks_1ms);
-            TIMER_CounterSet(TIMER0, 0);
-
-            // Reset the counter
+            // Reset the click counter
             TIMER_CounterSet(TIMER1, 0);
 
+            // Re-arm the rising edge interrupt
+            GPIO_IntEnable(1);
         }
         else
         {
-            if (detected_clicks >= CLICKS_LOWER_BOUND)
+            // Too loud to count as a call, so reset
+            detect_state = DETECT_IDLE;
+
+            detected_clicks = 0;
+
+            tick_recorder = 0;
+
+            // If we got a valid call anyway, record it
+            if (detected_clicks >= CLICKS_LOWER_BOUND &&
+                    detected_clicks <= CLICKS_UPPER_BOUND)
             {
                 record_call();
             }
 
-            // Reset and shut down
+            // Power down the timers and re-arm the edge interrupt
             disable_timers();
         }
+    }
+    else if (detect_state == DETECT_WAIT)
+    {
+        // We waited for another call but didn't get one, go back to idle
+
+        // If we got a valid call anyway, record it
+        detect_state = DETECT_IDLE;
+
+        if (detected_clicks >= CLICKS_LOWER_BOUND &&
+                detected_clicks <= CLICKS_UPPER_BOUND)
+        {
+            record_call();
+        }
+
+        detected_clicks = 0;
+        detect_state = DETECT_IDLE;
+
+        disable_timers();
+
     }
 }
 
 /**
- * Power down all the timers and reset to wait
+ * Power down all the timers
  */
 static void disable_timers(void)
 {
-    // Reset ready for next run
-    detected_clicks = 0;
-    detect_state = DETECT_WAITING;
-
-    tick_recorder = 0;
-
-    // Reconfigure the timer back to 1ms and turn it off
-    TIMER_TopSet(TIMER0, timer_ticks_1ms);
-    TIMER_CompareSet(TIMER0, 0, timer_ticks_1ms/5);
+    // Power off the main 1ms timer
     TIMER_Enable(TIMER0, false);
     TIMER_IntClear(TIMER0, TIMER_IF_CC0 | TIMER_IF_OF);
+    TIMER_CounterSet(TIMER0, 0);
     CMU_ClockEnable(cmuClock_TIMER0, false);
     NVIC_DisableIRQ(TIMER0_IRQn);
-    //NVIC_ClearPendingIRQ(TIMER0_IRQn);
 
     // Clear the counter
     TIMER_Enable(TIMER1, false);
