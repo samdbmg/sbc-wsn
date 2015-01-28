@@ -33,7 +33,7 @@ static uint8_t g_clicks_total = INITIAL_CLICK_COUNT;
 static volatile uint8_t g_clicks_progress;
 
 // Initial call timer value
-static const uint32_t g_initial_call_timer = 1000;
+static const uint32_t g_initial_call_timer = 5000;
 
 /**
  * Handle mark space timer overflow and compare match to turn pulse on and off
@@ -153,7 +153,7 @@ void main(void)
     // Configure the assorted timers
     pwm_timer_setup();
     markspace_timer_setup();
-    //call_timer_setup(g_initial_call_timer);
+    call_timer_setup(g_initial_call_timer);
 
     // Go to sleep. Interrupts will do the rest
     __WFI();
