@@ -19,9 +19,6 @@
 bool timer_active = false;
 bool last_step = false;
 
-uint32_t timer_1ms_ticks;
-uint32_t timer_2ms_ticks;
-
 volatile uint64_t high_count;
 volatile uint64_t low_count;
 volatile uint32_t pulse_buffer;
@@ -33,6 +30,9 @@ void pin_mode_init(void)
 {
     pin_timer_init();
     pinchange_init();
+
+    // Configure user LED0
+    GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
 }
 
 /**
@@ -100,7 +100,7 @@ void pinchange_init(void)
         .dmaClrAct  = false,
         .quadModeX4 = false,
         .oneShot    = false,
-        .sync       = true,
+        .sync       = false,
     };
 
     TIMER_Init(TIMER1, &timer_init_data);
@@ -161,11 +161,7 @@ void pin_timer_init(void)
     TIMER_Init(TIMER0, &timerInit);
 
     // Wrap around is about 1kHz
-    timer_1ms_ticks = get_ticks_from_ms(1);
-    timer_2ms_ticks = get_ticks_from_ms(2);
-    TIMER_TopSet(TIMER0, timer_1ms_ticks);
-
-    setup_detect_algorithm(timer_1ms_ticks, timer_2ms_ticks);
+    TIMER_TopSet(TIMER0, get_ticks_from_ms(1));
 
     // Also configure compare to fire after about 200us
     TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(0.2));
@@ -196,7 +192,7 @@ void TIMER0_IRQHandler(void)
     {
         // Clear interrupt flag
         TIMER_IntClear(TIMER0, TIMER_IF_CC0);
-        TIMER_CompareSet(TIMER0, 0, timer_2ms_ticks + 1);
+        TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(35));
 
         // Run algorithm to check we're getting a valid call
         short_timeout();
