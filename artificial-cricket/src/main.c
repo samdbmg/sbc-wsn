@@ -6,7 +6,6 @@
 
 /* Board support headers */
 #include "stm32f4xx.h"
-#include "trace.h"
 
 /* Application specific headers */
 #include "timer_config.h"
@@ -34,7 +33,7 @@ static uint8_t g_clicks_total = INITIAL_CLICK_COUNT;
 static volatile uint8_t g_clicks_progress;
 
 // Initial call timer value
-static const uint32_t g_initial_call_timer = 1000;
+static const uint32_t g_initial_call_timer = 5000;
 
 /**
  * Handle mark space timer overflow and compare match to turn pulse on and off
@@ -99,8 +98,6 @@ static void generate_call(void)
     // Turn the LED on
     GPIO_WriteBit(GPIOD, GPIO_Pin_15, Bit_SET);
 
-    trace_printf("Calling...");
-
     // Reset the click progress count to zero
     g_clicks_progress = 0;
 
@@ -124,9 +121,6 @@ static void generate_call(void)
         TIM4->CCR1 = (uint32_t)random_percentage_adjust(2, 5,
                 (int32_t)TIM4->CCR1, MARKSPACE_COMPARE_VALUE);
 
-        trace_printf("Adjusted to %d, %d, %d, %d clicks\n", TIM2->ARR,
-                TIM4->ARR, TIM4->CCR1, g_clicks_total);
-
     }
 }
 
@@ -137,8 +131,6 @@ static void generate_call(void)
  */
 void main(void)
 {
-    trace_printf("Artificial Cricket Running\r\n");
-
     // Configure a board LED to illuminate while calling
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
 

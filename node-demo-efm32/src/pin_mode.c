@@ -14,12 +14,10 @@
 #include "em_pcnt.h"
 
 #include "pin_mode.h"
+#include "pinchange_detect_algorithm.h"
 
 bool timer_active = false;
 bool last_step = false;
-
-uint32_t timer_1ms_ticks;
-uint32_t timer_2ms_ticks;
 
 volatile uint64_t high_count;
 volatile uint64_t low_count;
@@ -32,6 +30,9 @@ void pin_mode_init(void)
 {
     pin_timer_init();
     pinchange_init();
+
+    // Configure user LED0
+    GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
 }
 
 /**
@@ -58,7 +59,7 @@ void pinchange_init(void)
     CMU_ClockEnable(cmuClock_PRS, true);
 
     // Enable GPIO PC0 as input
-    GPIO_PinModeSet(gpioPortC, 0, gpioModeInputPull, 0);
+    GPIO_PinModeSet(gpioPortC, 0, gpioModeInputPullFilter, 0);
 
     // Configure GPIO PC0 to fire an interrupt on a rising edge
     GPIO_IntConfig(gpioPortC, 0, true, false, true);
@@ -99,10 +100,12 @@ void pinchange_init(void)
         .dmaClrAct  = false,
         .quadModeX4 = false,
         .oneShot    = false,
-        .sync       = true,
+        .sync       = false,
     };
 
     TIMER_Init(TIMER1, &timer_init_data);
+
+    TIMER_IntEnable(TIMER1, TIMER_IEN_CC0);
 
     // Set PRS to fire on pin change
     PRS_SourceSignalSet(0, PRS_CH_CTRL_SOURCESEL_GPIOL,
@@ -124,6 +127,22 @@ void pin_timer_init(void)
     // Power the timer up
     CMU_ClockEnable(cmuClock_TIMER0, true);
 
+    // Configure 200us capture-compare
+    const TIMER_InitCC_TypeDef timer_cc_data =
+    {
+      .cufoa      = timerOutputActionNone,  /* No action on counter underflow */
+      .cofoa      = timerOutputActionNone,  /* No action on counter overflow */
+      .cmoa       = timerOutputActionNone,  /* No action on counter match */
+      .mode       = timerCCModeCompare,     /* CC channel mode capture */
+      .filter     = false,                  /* No filter */
+      .prsInput   = false,                  /* CC channel PRS input */
+      .coist      = false,                  /* Comparator output initial state */
+      .outInvert  = false,
+      .eventCtrl  = timerEventRising,
+    };
+
+    TIMER_InitCC(TIMER0, 0, &timer_cc_data);
+
     const TIMER_Init_TypeDef timerInit =
     {
         .clkSel = timerClkSelHFPerClk,
@@ -139,15 +158,16 @@ void pin_timer_init(void)
         .sync = false,
     };
 
-    TIMER_IntEnable(TIMER0, TIMER_IF_OF);
-    NVIC_EnableIRQ(TIMER0_IRQn);
-
     TIMER_Init(TIMER0, &timerInit);
 
     // Wrap around is about 1kHz
-    timer_1ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(2 * 1000);
-    timer_2ms_ticks = CMU_ClockFreqGet(cmuClock_TIMER0)/(2 * 500);
-    TIMER_TopSet(TIMER0, timer_1ms_ticks);
+    TIMER_TopSet(TIMER0, get_ticks_from_ms(1));
+
+    // Also configure compare to fire after about 200us
+    TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(0.2));
+
+    // Enable all the interrupts we need
+    TIMER_IntEnable(TIMER0, TIMER_IEN_OF | TIMER_IEN_CC0);
 
     // Power it down until we need it
     CMU_ClockEnable(cmuClock_TIMER0, false);
@@ -158,18 +178,8 @@ void pin_timer_init(void)
  */
 void GPIO_EVEN_IRQHandler(void)
 {
-    NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+    initial_detect();
     GPIO_IntClear(1);
-
-    CMU_ClockEnable(cmuClock_TIMER1, true);
-    CMU_ClockEnable(cmuClock_PRS, true);
-    CMU_ClockEnable(cmuClock_TIMER0, true);
-
-    timer_active = true;
-
-    TIMER_Enable(TIMER0, true);
-    TIMER_IntEnable(TIMER1, TIMER_IF_CC0);
-    TIMER_CounterSet(TIMER1, 0);
 }
 
 /**
@@ -177,42 +187,23 @@ void GPIO_EVEN_IRQHandler(void)
  */
 void TIMER0_IRQHandler(void)
 {
-    // Clear interrupt flag
-    TIMER_IntClear(TIMER0, TIMER_IF_OF);
-
-    uint32_t value = TIMER_CounterGet(TIMER1);
-    pulse_buffer = 0;
-
-    if (last_step == false)
+    uint32_t flags = TIMER_IntGet(TIMER0);
+    if (flags & TIMER_IF_CC0)
     {
-        // Reconfigure the timer to count for 2ms
-        TIMER_TopSet(TIMER0, timer_2ms_ticks);
+        // Clear interrupt flag
+        TIMER_IntClear(TIMER0, TIMER_IF_CC0);
+        TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(35));
 
-        // Save the counter value and reset it
-        high_count = value;
-        TIMER_CounterSet(TIMER1, 0);
-
-        // Mark that next time we should stop counting
-        last_step = true;
+        // Run algorithm to check we're getting a valid call
+        short_timeout();
     }
     else
     {
-        // Reconfigure the timer back to 1ms and turn it off
-        TIMER_TopSet(TIMER0, timer_1ms_ticks);
-        TIMER_Enable(TIMER0, false);
-        CMU_ClockEnable(cmuClock_TIMER0, false);
+        // Clear interrupt flag
+        TIMER_IntClear(TIMER0, TIMER_IF_OF);
 
-        // Save the count value and turn it off
-        low_count = value;
-        CMU_ClockEnable(cmuClock_TIMER1, false);
-        CMU_ClockEnable(cmuClock_PRS, false);
-
-        // Reset the state machine
-        last_step = false;
-        timer_active = false;
-
-        // Re-enable the pin change interrupt
-        NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+        // Run algorithm to reset timer and update state machine
+        full_timeout();
     }
 }
 
@@ -221,7 +212,7 @@ void TIMER0_IRQHandler(void)
  */
 void sleep_handler(void)
 {
-    if (timer_active == true)
+    if (get_detect_active() == true)
     {
         EMU_EnterEM1();
     }

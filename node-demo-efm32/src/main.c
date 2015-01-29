@@ -110,7 +110,7 @@ int main(void)
 {
     CHIP_Init();
 
-    CMU_HFRCOBandSet(cmuHFRCOBand_11MHz);
+    CMU_HFRCOBandSet(cmuHFRCOBand_21MHz);
 
     // Low energy module clock supply
     CMU_ClockEnable(cmuClock_CORELE, true);
