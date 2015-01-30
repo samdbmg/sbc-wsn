@@ -2,9 +2,7 @@
  * Detection algorithm for use with pin change method
  */
 
-#include "em_timer.h"
-#include "em_cmu.h"
-#include "em_gpio.h"
+#include "driverlib.h"
 
 #include "pin_mode.h"
 
@@ -49,8 +47,8 @@ bool get_detect_active(void)
  */
 void initial_detect(void)
 {
-    // Disable the interrupt that triggers this until the algorithm finishes
-    GPIO_IntDisable(1);
+    // Reconfigure to count edges
+    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P2, GPIO_PIN0);
 
     // Check whether this is a new call or part of an ongoing
     if (detect_state == DETECT_IDLE)
@@ -58,22 +56,17 @@ void initial_detect(void)
         // OK, this is a new call hit. Start the timers, clear everything
         detected_clicks = 0;
 
-        // Power up and enable the timers that make this work
-        CMU_ClockEnable(cmuClock_TIMER1, true);
-        CMU_ClockEnable(cmuClock_PRS, true);
-        CMU_ClockEnable(cmuClock_TIMER0, true);
-
         // Reset timer top and compare values
-        TIMER_Enable(TIMER0, false);
-        TIMER_TopSet(TIMER0, get_ticks_from_ms(1));
-        TIMER_CompareSet(TIMER0, 0, get_ticks_from_ms(0.2));
-        TIMER_CounterSet(TIMER0, false);
+        Timer_A_stop(TIMER_A0_BASE);
+        Timer_A_setCompareValue(TIMER_A0_BASE,
+                TIMER_A_CAPTURECOMPARE_REGISTER_0, get_ticks_from_ms(1));
+        Timer_A_setCompareValue(TIMER_A0_BASE,
+                TIMER_A_CAPTURECOMPARE_REGISTER_1, get_ticks_from_ms(0.2));
+        TA0R = 0;
 
-        // Start all the timers running
-        TIMER_Enable(TIMER0, true);
-        TIMER_Enable(TIMER1, true);
-        TIMER_IntEnable(TIMER0, TIMER_IEN_CC0);
-        NVIC_EnableIRQ(TIMER0_IRQn);
+        // Start the timers
+        Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
+        Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_CONTINUOUS_MODE);
 
         // Mark that we're at the start of detection
         detect_state = DETECT_FIRST_HIGH;
@@ -82,30 +75,31 @@ void initial_detect(void)
     {
         // This is part of an ongoing call, has it started at least 1.5ms after
         // last ended.
-        uint16_t value = TIMER_CounterGet(TIMER0);
+        uint16_t value = TA0R;
         if (value > get_ticks_from_ms(1.5))
         {
             // This can be part of the last call, so run detect again
             detect_state = DETECT_HIGH;
 
             // Set the timer TOP and CC0 to 1ms and 200us in future
-            TIMER_Enable(TIMER0, false);
-            uint32_t countvalue = TIMER_CounterGet(TIMER0);
-            TIMER_TopSet(TIMER0, countvalue + get_ticks_from_ms(1));
-            TIMER_CompareSet(TIMER0, 0, countvalue + get_ticks_from_ms(0.2));
+            Timer_A_stop(TIMER_A0_BASE);
+            uint32_t countvalue = TA0R;
+            Timer_A_setCompareValue(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0,
+                    countvalue + get_ticks_from_ms(1));
+            Timer_A_setCompareValue(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_1,
+                    countvalue + get_ticks_from_ms(0.2));
 
-            // Re-enable CC0 and clear edge count
-            TIMER_IntEnable(TIMER0, TIMER_IEN_CC0);
-            TIMER_CounterSet(TIMER1, 0);
+            // Re-enable CC0
+            Timer_A_enableCaptureCompareInterrupt(TIMER_A0_BASE,
+                    TIMER_A_CAPTURECOMPARE_REGISTER_1);
 
-            TIMER_Enable(TIMER0, true);
+            Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
         }
         else
         {
             // If not its too early, ignore as a spurious wake (noise?)
             // Turn interrupt back on and wait for another
-            GPIO_IntClear(1);
-            GPIO_IntEnable(1);
+            GPIO_setAsInputPin(GPIO_PORT_P2, GPIO_PIN0);
         }
     }
 }
@@ -115,7 +109,9 @@ void initial_detect(void)
  */
 void short_timeout(void)
 {
-    uint32_t value = TIMER_CounterGet(TIMER1);
+    Timer_A_stop(TIMER_A1_BASE);
+    uint32_t value = TA1R;
+    Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_CONTINUOUS_MODE);
 
     if (value < 3)
     {
@@ -138,20 +134,20 @@ void short_timeout(void)
             detect_state = DETECT_WAIT;
 
             // Clear the edge counter since this one was noise
-            TIMER_CounterSet(TIMER1, 0);
+            TA1R = 0;
 
             // Extend the time we will wait for the next click to be 2.5ms total
-            TIMER_TopSet(TIMER0, get_ticks_from_ms(1.5));
+            Timer_A_setCompareValue(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0,
+                    get_ticks_from_ms(1.5));
 
             // Re-arm rising edge interrupt
-            GPIO_IntClear(1);
-            GPIO_IntEnable(1);
+            GPIO_setAsInputPin(GPIO_PORT_P2, GPIO_PIN0);
         }
     }
     else
     {
         // Prevent this from running again
-        TIMER_IntDisable(TIMER0, TIMER_IEN_CC0);
+        TA0CCTL1 &= ~CCIE;
     }
 }
 
@@ -160,7 +156,8 @@ void short_timeout(void)
  */
 void full_timeout(void)
 {
-    uint32_t value = TIMER_CounterGet(TIMER1);
+    Timer_A_stop(TIMER_A1_BASE);
+    uint32_t value = TA1R;
 
     if (detect_state == DETECT_HIGH || detect_state == DETECT_FIRST_HIGH)
     {
@@ -176,12 +173,17 @@ void full_timeout(void)
             detect_state = DETECT_LOW;
 
             // Reset the counter
-            TIMER_CounterSet(TIMER1, 0);
+            TA1R = 0;
 
             // Set the timer back to 1ms
-            TIMER_Enable(TIMER0, false);
-            TIMER_TopSet(TIMER0, get_ticks_from_ms(1));
-            TIMER_Enable(TIMER0, true);
+            Timer_A_stop(TIMER_A0_BASE);
+            TA0R = 0;
+            Timer_A_setCompareValue(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0,
+                    get_ticks_from_ms(1));
+            Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
+
+            // Start the counter
+            Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_CONTINUOUS_MODE);
         }
         else
         {
@@ -189,8 +191,6 @@ void full_timeout(void)
             detect_state = DETECT_IDLE;
 
             detected_clicks = 0;
-
-            tick_recorder = 0;
 
             // If we got a valid call anyway, record it
             if (detected_clicks >= CLICKS_LOWER_BOUND &&
@@ -218,17 +218,18 @@ void full_timeout(void)
             detected_clicks++;
 
             // Extend the timer top value to 2.5ms timeout
-            TIMER_Enable(TIMER0, false);
-            TIMER_CounterSet(TIMER0, get_ticks_from_ms(1));
-            TIMER_TopSet(TIMER0, get_ticks_from_ms(2.5));
-            TIMER_Enable(TIMER0, true);
-
-            // Reset the click counter
-            TIMER_CounterSet(TIMER1, 0);
+            Timer_A_stop(TIMER_A0_BASE);
+            TA0R = get_ticks_from_ms(1);
+            Timer_A_setCompareValue(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0,
+                    get_ticks_from_ms(2.5));
+            Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
 
             // Re-arm the rising edge interrupt
-            GPIO_IntClear(1);
-            GPIO_IntEnable(1);
+            GPIO_setAsInputPin(GPIO_PORT_P2, GPIO_PIN0);
+
+            // Reset the click counter and re-enable
+            TA1R = 0;
+            Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_CONTINUOUS_MODE);
         }
         else
         {
@@ -236,8 +237,6 @@ void full_timeout(void)
             detect_state = DETECT_IDLE;
 
             detected_clicks = 0;
-
-            tick_recorder = 0;
 
             // If we got a valid call anyway, record it
             if (detected_clicks >= CLICKS_LOWER_BOUND &&
@@ -277,24 +276,22 @@ void full_timeout(void)
 static void disable_timers(void)
 {
     tick_recorder = 0;
+
     // Power off the main 1ms timer
-    TIMER_Enable(TIMER0, false);
-    TIMER_IntClear(TIMER0, TIMER_IF_CC0 | TIMER_IF_OF);
-    TIMER_CounterSet(TIMER0, 0);
-    CMU_ClockEnable(cmuClock_TIMER0, false);
-    NVIC_DisableIRQ(TIMER0_IRQn);
+    Timer_A_stop(TIMER_A0_BASE);
+    Timer_A_clearTimerInterruptFlag(TIMER_A0_BASE);
+    Timer_A_clearCaptureCompareInterruptFlag(TIMER_A0_BASE,
+            TIMER_A_CAPTURECOMPARE_REGISTER_0);
+    Timer_A_clearCaptureCompareInterruptFlag(TIMER_A0_BASE,
+            TIMER_A_CAPTURECOMPARE_REGISTER_1);
+    TA0R = 0;
 
     // Clear the counter
-    TIMER_Enable(TIMER1, false);
-    TIMER_CounterSet(TIMER1, 0);
-
-    // Turn off the counter
-    CMU_ClockEnable(cmuClock_TIMER1, false);
-    CMU_ClockEnable(cmuClock_PRS, false);
+    Timer_A_stop(TIMER_A1_BASE);
+    TA1R = 0;
 
     // Re-enable the pin change interrupt
-    GPIO_IntClear(1);
-    GPIO_IntEnable(1);
+    GPIO_setAsInputPin(GPIO_PORT_P2, GPIO_PIN0);
 }
 
 /**
@@ -302,7 +299,7 @@ static void disable_timers(void)
  */
 static void record_call(void)
 {
-    GPIO_PinOutToggle(gpioPortC, 10);
+    GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     valid_hits++;
 
 }

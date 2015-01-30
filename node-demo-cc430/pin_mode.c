@@ -7,6 +7,7 @@
 
 /* Application specific includes */
 #include "pin_mode.h"
+#include "pinchange_detect_algorithm.h"
 
 /* Functions only in this file */
 static void edge_counter_init(void);
@@ -59,7 +60,7 @@ void click_timer_init(void)
 
     timer_init_data.captureCompareInterruptEnable_CCR0_CCIE = TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE;
     timer_init_data.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
-    timer_init_data.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_2;
+    timer_init_data.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_4;
     timer_init_data.startTimer = false;
     timer_init_data.timerClear = TIMER_A_DO_CLEAR;
     timer_init_data.timerInterruptEnable_TAIE = TIMER_A_TAIE_INTERRUPT_ENABLE;
@@ -78,6 +79,18 @@ void click_timer_init(void)
 
 }
 
+void sleep_handler(void)
+{
+    if (get_detect_active() == true)
+    {
+        __low_power_mode_0();
+    }
+    else
+    {
+        __low_power_mode_4();
+    }
+}
+
 
 /**
  * Handle rising edge detection, trigger algorithm
@@ -90,9 +103,12 @@ __attribute__((interrupt(PORT2_VECTOR)))
 #endif
 void Port_2(void)
 {
+    // Ensure we transition power mode correctly
+    __low_power_mode_off_on_exit();
+
     if (GPIO_getInterruptStatus(GPIO_PORT_P2, GPIO_PIN0))
     {
-        Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
+        initial_detect();
 
         GPIO_clearInterruptFlag(GPIO_PORT_P2, GPIO_PIN0);
     }
@@ -109,7 +125,13 @@ __attribute__((interrupt(TIMER0_A0_VECTOR)))
 #endif
 void TIMER0_A0_ISR(void)
 {
-    Timer_A_clearCaptureCompareInterruptFlag(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0);
+    // Ensure we transition power mode correctly
+    __low_power_mode_off_on_exit();
+
+    full_timeout();
+    Timer_A_clearCaptureCompareInterruptFlag(TIMER_A0_BASE,
+            TIMER_A_CAPTURECOMPARE_REGISTER_0);
+    Timer_A_clearTimerInterruptFlag(TIMER_A0_BASE);
 }
 
 /**
@@ -123,5 +145,17 @@ __attribute__((interrupt(TIMER0_A1_VECTOR)))
 #endif
 void TIMER0_A1_ISR(void)
 {
-    Timer_A_clearCaptureCompareInterruptFlag(TIMER_A0_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_1);
+    // Do nothing unless we got a CC1 interrupt
+    uint16_t test = TA0IV;
+    if (test == 0x02)
+    {
+        // Ensure we transition power mode correctly
+        __low_power_mode_off_on_exit();
+
+        short_timeout();
+        Timer_A_clearCaptureCompareInterruptFlag(TIMER_A0_BASE,
+                TIMER_A_CAPTURECOMPARE_REGISTER_1);
+    }
+
+    Timer_A_clearTimerInterruptFlag(TIMER_A0_BASE);
 }
