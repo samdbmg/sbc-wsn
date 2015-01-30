@@ -15,6 +15,9 @@
 // Set this to zero to disable random adjust
 #define RANDOM_ENABLE 1
 
+// Set this to zero to only call on button push
+#define CALL_TIMER_ENABLE 1
+
 // Initial number of clicks per call
 #define INITIAL_CLICK_COUNT 7
 
@@ -33,7 +36,7 @@ static uint8_t g_clicks_total = INITIAL_CLICK_COUNT;
 static volatile uint8_t g_clicks_progress;
 
 // Initial call timer value
-static const uint32_t g_initial_call_timer = 5000;
+static const uint32_t g_initial_call_timer = 1000;
 
 /**
  * Handle mark space timer overflow and compare match to turn pulse on and off
@@ -84,10 +87,19 @@ void TIM2_IRQHandler(void)
 
 void EXTI0_IRQHandler(void)
 {
-    // Trigger a call immediately
-    generate_call();
+    // Simple debounce
+    for (volatile uint16_t i = 0; i < 0xFFFF; i++)
+    {
 
-    EXTI_ClearITPendingBit(EXTI_Line0);
+    }
+
+    if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0))
+    {
+        // Trigger a call immediately
+        generate_call();
+
+        EXTI_ClearITPendingBit(EXTI_Line0);
+    }
 }
 
 /**
@@ -153,7 +165,10 @@ void main(void)
     // Configure the assorted timers
     pwm_timer_setup();
     markspace_timer_setup();
+
+#if CALL_TIMER_ENABLE
     call_timer_setup(g_initial_call_timer);
+#endif
 
     // Go to sleep. Interrupts will do the rest
     __WFI();
