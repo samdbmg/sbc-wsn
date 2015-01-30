@@ -32,6 +32,8 @@
 artificial-cricket/Debug
 node-demo-efm32/Debug
 node-demo-efm32/GNU ARM v4.8.3 - Debug
+node-demo-cc430/Debug
+node-demo-cc430/Release
 
 # Just for testing for now
 node-demo-stm32/
