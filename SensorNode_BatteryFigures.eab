@@ -1,0 +1,71 @@
+<!DOCTYPE eABatteryML>
+<SaveData>
+ <Version version="1"/>
+ <SessionInfo familyName="Zero Gecko" sessionName="Untitled1"/>
+ <Battery parallel="1" series="2" type="Alkaline AA"/>
+ <State energyMode="EM0" useExternalCurrent="1" stateDuration="0.01201217376471714" description="Processing" externalCurrent="0.0001037528435771489">
+  <Component name="LFRCO">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="HFRCO">
+   <Configuration frequency="21MHz" enabled="true"/>
+  </Component>
+  <Component name="RTC">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="PRS">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="TIMER1">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="TIMER0">
+   <Configuration enabled="true"/>
+  </Component>
+ </State>
+ <State energyMode="EM1" useExternalCurrent="1" stateDuration="0.2513983448090677" description="Detect Active" externalCurrent="0.0001037528435771489">
+  <Component name="LFRCO">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="HFRCO">
+   <Configuration frequency="21MHz" enabled="true"/>
+  </Component>
+  <Component name="RTC">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="PRS">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="TIMER1">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="TIMER0">
+   <Configuration enabled="true"/>
+  </Component>
+ </State>
+ <State energyMode="EM0" useExternalCurrent="1" stateDuration="0.001054457207117033" description="Transmit" externalCurrent="0.06668067997735788">
+  <Component name="LFRCO">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="HFRCO">
+   <Configuration frequency="21MHz" enabled="true"/>
+  </Component>
+  <Component name="RTC">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="ADC">
+   <Configuration enabled="true" sampling_profile="10kS, 12bit, internal reference, Warmup 0b01"/>
+  </Component>
+  <Component name="USART">
+   <Configuration enabled="true"/>
+  </Component>
+ </State>
+ <State energyMode="EM2" useExternalCurrent="1" stateDuration="3230.97663034023" description="Idle" externalCurrent="8.790225331365116e-005">
+  <Component name="LFRCO">
+   <Configuration enabled="true"/>
+  </Component>
+  <Component name="RTC">
+   <Configuration enabled="true"/>
+  </Component>
+ </State>
+</SaveData>
