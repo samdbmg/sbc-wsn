@@ -23,7 +23,7 @@
 // How many clicks has the algorithm seen in this call?
 static volatile uint8_t detected_clicks;
 // Are we detecting clicks (true) or gaps (false)?
-static volatile uint8_t detect_state;
+static volatile uint8_t detect_state = DETECT_IDLE;
 
 uint8_t ticks_array[16];
 uint8_t tick_recorder = 0;
@@ -254,8 +254,6 @@ void full_timeout(void)
         // We waited for another call but didn't get one, go back to idle
 
         // If we got a valid call anyway, record it
-        detect_state = DETECT_IDLE;
-
         if (detected_clicks >= CLICKS_LOWER_BOUND &&
                 detected_clicks <= CLICKS_UPPER_BOUND)
         {
@@ -299,7 +297,7 @@ static void disable_timers(void)
  */
 static void record_call(void)
 {
-    GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    //GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     valid_hits++;
 
 }

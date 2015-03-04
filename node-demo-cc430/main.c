@@ -9,12 +9,13 @@
 #include "pin_mode.h"
 
 /* File-local functions */
-void set_clock_12mhz(void);
+static void set_clock_12mhz(void);
+static void set_ports_lowpower(void);
 
 /**
  * Reconfigure the clock to run at 12MHz
  */
-void set_clock_12mhz(void)
+static void set_clock_12mhz(void)
 {
     // Set DCO FLL reference = REFO
     UCSCTL3 |= SELREF_2;
@@ -44,6 +45,21 @@ void set_clock_12mhz(void)
     SFRIFG1 &= ~OFIFG;
 }
 
+static void set_ports_lowpower(void)
+{
+    PADIR = 0xFFFF;
+    PBDIR = 0xFFFF;
+    PCDIR = 0xFFFF;
+    PJDIR = 0xFFFF;
+    PAOUT = 0x0000;
+    PBOUT = 0x0000;
+    PCOUT = 0x0000;
+    PJOUT = 0x0000;
+
+    P1OUT |= 0x82;
+    P2OUT |= 0x03;
+}
+
 /**
  * Configure and start the RTC
  */
@@ -63,7 +79,11 @@ void main(void)
     WDT_A_hold(WDT_A_BASE);
 
     // Run the clock a bit faster
+    PMM_setVCore(1);
     set_clock_12mhz();
+
+    // Configure all ports
+    set_ports_lowpower();
 
     // Enable a pin for output
     GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
@@ -71,7 +91,7 @@ void main(void)
     // Configure the detect algorithm peripherals
     pin_mode_init();
 
-    //Enter LPM0, enable interrupts
+    // Enable interrupts
     __bis_SR_register(GIE);
 
     while (1)
