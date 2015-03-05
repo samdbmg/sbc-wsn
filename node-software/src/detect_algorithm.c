@@ -75,7 +75,8 @@ static void _detect_timer_config(void)
 }
 
 /**
- * Configure the Analog Comparator to detect edges on the input
+ * Configure the Analog Comparator to detect edges on the input. Based on code
+ * given in an0020_efm32_analog_comparator example.
  */
 static void _detect_comparator_config(void)
 {
@@ -103,7 +104,10 @@ static void _detect_comparator_config(void)
     ACMP_IntEnable(ACMP0, ACMP_IEN_EDGE);
 
     // Wait for comparator to finish starting up
-    while (!(ACMP0->STATUS & ACMP_STATUS_ACMPACT)) ;
+    while (!(ACMP0->STATUS & ACMP_STATUS_ACMPACT))
+    {
+
+    }
 
     // Enable interrupts
     NVIC_ClearPendingIRQ(ACMP0_IRQn);
