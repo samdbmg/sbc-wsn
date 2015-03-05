@@ -26,6 +26,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>emlib/em_acmp.c</name>
+			<type>1</type>
+			<location>C:/SiliconLabs/SimplicityStudio/v2/developer/sdks/efm32/v2/emlib/src/em_acmp.c</location>
+		</link>
+		<link>
 			<name>emlib/em_adc.c</name>
 			<type>1</type>
 			<location>C:/SiliconLabs/SimplicityStudio/v2/developer/sdks/efm32/v2/emlib/src/em_adc.c</location>

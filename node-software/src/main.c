@@ -54,13 +54,13 @@ void rtc_init(void)
 }
 
 /**
- * Handle an RTC wakeup by doing something with data
+ * Handle an RTC wakeup by doing something with data and radios
  */
 void RTC_IRQHandler(void)
 {
     CMU_ClockEnable(cmuClock_USART1, true);
 
-    rtc_handler();
+    //TODO
 
     CMU_ClockEnable(cmuClock_USART1, false);
 
