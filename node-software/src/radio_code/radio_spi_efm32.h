@@ -7,8 +7,7 @@
 
 void radio_spi_init(void);
 
-void radio_spi_powerup(void);
-void radio_spi_powerdown(void);
+void radio_spi_powerstate(bool state);
 
 uint8_t radio_spi_transfer(uint8_t send_data);
 

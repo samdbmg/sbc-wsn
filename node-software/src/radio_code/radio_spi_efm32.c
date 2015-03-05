@@ -59,19 +59,12 @@ void radio_spi_init(void)
 }
 
 /**
- * Enable clock supply to the SPI module
+ * Enable or disable clock to the SPI module
+ * @param state True to power up, false to power down
  */
-void radio_spi_powerup(void)
+void radio_spi_powerstate(bool state)
 {
-    CMU_ClockEnable(cmuClock_USART1, true);
-}
-
-/**
- * Disable clock supply to the SPI module
- */
-void radio_spi_powerdown(void)
-{
-    CMU_ClockEnable(cmuClock_USART1, false);
+    CMU_ClockEnable(cmuClock_USART1, state);
 }
 
 /**

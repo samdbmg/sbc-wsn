@@ -16,6 +16,7 @@
 /* Functions used only in this file */
 static void _radio_write_single_register(uint8_t address, uint8_t data);
 static uint8_t _radio_read_single_register(uint8_t address);
+static void _radio_powerstate(bool state);
 
 
 /**
@@ -39,7 +40,7 @@ bool radio_init(void)
     // Write all the radio config parameters
 
     // Drop the radio into low power mode and kill clock supply to the USART
-    radio_spi_powerdown();
+    _radio_powerstate(false);
 
     return false;
 }
@@ -101,6 +102,26 @@ static uint8_t _radio_read_single_register(uint8_t address)
     uint8_t data = radio_spi_transfer(0);
 
     return data;
+}
+
+/**
+ * Enable or disable the radio for power reduction. Also shuts down SPI
+ * @param state True to power up the radio, false to shutdown
+ */
+static void _radio_powerstate(bool state)
+{
+    if (state)
+    {
+        radio_spi_powerstate(true);
+
+        _radio_write_single_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+    }
+    else
+    {
+        _radio_write_single_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_SLEEP);
+
+        radio_spi_powerstate(false);
+    }
 }
 
 /*
