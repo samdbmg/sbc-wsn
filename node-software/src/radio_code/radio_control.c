@@ -38,11 +38,16 @@ bool radio_init(void)
     }
 
     // Write all the radio config parameters
+    for (uint8_t i = 0; i < sizeof(radio_config_data); i++)
+    {
+        _radio_write_single_register(radio_config_data[i][0],
+                radio_config_data[i][1]);
+    }
 
     // Drop the radio into low power mode and kill clock supply to the USART
     _radio_powerstate(false);
 
-    return false;
+    return true;
 }
 
 /**
