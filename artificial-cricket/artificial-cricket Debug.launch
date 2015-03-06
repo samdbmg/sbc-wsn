@@ -18,7 +18,7 @@
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerOther" value="-f &quot;C:\Apps\openocd-0.8.0\bin\stm32f4.txt&quot;"/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerTelnetPortNumber" value="4444"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.otherInitCommands" value="monitor reset halt"/>
-<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.otherRunCommands" value="symbol-file C:\\Users\\Sam\\Documents\\Code\\sbc-wsn\\artificial-cricket\\Debug\\artificial-cricket.elf&#13;&#10;load C:\\Users\\Sam\\Documents\\Code\\sbc-wsn\\artificial-cricket\\Debug\\artificial-cricket.elf"/>
+<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.otherRunCommands" value=""/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.secondResetType" value="halt"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value=""/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value=""/>

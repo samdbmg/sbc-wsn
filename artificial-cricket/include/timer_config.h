@@ -6,10 +6,14 @@
 #ifndef TIMER_CONFIG_H_
 #define TIMER_CONFIG_H_
 
+#include <stdbool.h>
+
 /* Function declarations */
 void pwm_timer_setup(void);
 void markspace_timer_setup(void);
-void call_timer_setup(uint32_t call_period_ms);
+void call_timer_setup(uint32_t call_period_ms, uint32_t female_period_ms);
+
+void call_timer_female(bool enable);
 
 /* Timer speed configuration details */
 #define TIMER_BASE_FREQUENCY    72000000

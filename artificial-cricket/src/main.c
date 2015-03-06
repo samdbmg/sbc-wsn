@@ -21,6 +21,10 @@
 // Initial number of clicks per call
 #define INITIAL_CLICK_COUNT 7
 
+// Generate a female response after this many (set to zero to disable)
+#define FEMALE_RESPONSE_PERIOD 10
+#define FEMALE_RESPONSE_DELAY_MS 25
+
 /* Declare functions used only in this file */
 // Mark/space timer IRQ
 void TIM4_IRQHandler(void);
@@ -37,6 +41,8 @@ static volatile uint8_t g_clicks_progress;
 
 // Initial call timer value
 static const uint32_t g_initial_call_timer = 1000;
+
+static int8_t g_female_wait = FEMALE_RESPONSE_PERIOD - 1;
 
 /**
  * Handle mark space timer overflow and compare match to turn pulse on and off
@@ -58,14 +64,23 @@ void TIM4_IRQHandler(void)
 
         g_clicks_progress++;
 
-        // Have we generated enough calls
-        if (g_clicks_progress >= g_clicks_total)
+        // Have we generated enough calls (or run once for female response)
+        if ((g_clicks_progress >= g_clicks_total) || (g_female_wait == -2))
         {
+            // Start the call timer
+            TIM_Cmd(TIM2, ENABLE);
+
             // Disable the mark/space timer and wait until call timer triggers
             TIM_Cmd(TIM4, DISABLE);
 
             // Turn the LED off
             GPIO_WriteBit(GPIOD, GPIO_Pin_15, Bit_RESET);
+        }
+
+        // If we just did a female response, reset to do male calls
+        if (g_female_wait == -2)
+        {
+            g_female_wait = FEMALE_RESPONSE_PERIOD - 1;
         }
 
         TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
@@ -116,8 +131,37 @@ static void generate_call(void)
     // Enable the mark/space timer
     TIM_Cmd(TIM4, ENABLE);
 
+    // Stop the call timer
+    TIM_Cmd(TIM2, DISABLE);
+
+    // Should female responses be considered?
+    if (FEMALE_RESPONSE_PERIOD > 0)
+    {
+        // Should we be generating a female call next time round?
+        if (g_female_wait == 0)
+        {
+            call_timer_female(true);
+
+            // Set the flag to mark we're waiting on a female call
+            g_female_wait = -1;
+        }
+        else if (g_female_wait == -1)
+        {
+            // This call should be a female response, so set the timer back
+            call_timer_female(false);
+
+            // Also mark for the benefit of the mark/space timer than we want
+            // only one click
+            g_female_wait = -2;
+        }
+        else
+        {
+            g_female_wait--;
+        }
+    }
+
     // Randomly adjust all the parameters
-    if (RANDOM_ENABLE)
+    if (RANDOM_ENABLE && g_female_wait != -1)
     {
         // Overall call timer
         TIM2->ARR = (uint32_t)random_percentage_adjust(10, 25, (int32_t)TIM2->ARR,
@@ -167,9 +211,12 @@ void main(void)
     markspace_timer_setup();
 
 #if CALL_TIMER_ENABLE
-    call_timer_setup(g_initial_call_timer);
+    call_timer_setup(g_initial_call_timer, FEMALE_RESPONSE_DELAY_MS);
 #endif
 
     // Go to sleep. Interrupts will do the rest
-    __WFI();
+    while (1)
+    {
+        __WFI();
+    }
 }

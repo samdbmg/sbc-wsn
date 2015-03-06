@@ -5,6 +5,7 @@
 
 
 #include <stdio.h>
+#include <stdbool.h>
 
 /* Board support headers */
 #include "stm32f4xx.h"
@@ -14,6 +15,9 @@
 
 /* Application specific headers */
 #include "timer_config.h"
+
+static uint32_t g_call_period_ms;
+static uint32_t g_female_period_ms;
 
 /**
  * Configure the PWM timer to generate 40kHz
@@ -108,8 +112,11 @@ void markspace_timer_setup(void)
  * @param call_period_ms Time in milliseconds between call generations.
  *                       Overflows after an hour
  */
-void call_timer_setup(uint32_t call_period_ms)
+void call_timer_setup(uint32_t call_period_ms, uint32_t female_period_ms)
 {
+    g_call_period_ms = call_period_ms;
+    g_female_period_ms = female_period_ms;
+
     // Start up timer clock
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
@@ -136,4 +143,20 @@ void call_timer_setup(uint32_t call_period_ms)
 
     // Enable the timer
     TIM_Cmd(TIM2, ENABLE);
+}
+
+/**
+ * Reconfigure the call timer either for a female response or a standard call
+ * @param enable Activate female response mode if true
+ */
+void call_timer_female(bool enable)
+{
+    if (enable)
+    {
+        TIM2->ARR = g_female_period_ms * 1000;
+    }
+    else
+    {
+        TIM2->ARR = g_call_period_ms * 1000;
+    }
 }
