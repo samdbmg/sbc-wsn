@@ -36,16 +36,16 @@ void radio_spi_init(void)
     usart_init.master       = 1;
     usart_init.clockMode    = usartClockMode0;
     usart_init.prsRxEnable  = 0;
-    usart_init.autoTx       = 0;
+    usart_init.autoTx       = 1;
 
     USART_InitSync(USART1, &usart_init);
 
     // Configure the USART to use location 3, enable all the pins
     USART1->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_CLKPEN | USART_ROUTE_RXPEN |
-            USART_ROUTE_CSPEN | USART_ROUTE_LOCATION_LOC3;
+            USART_ROUTE_LOCATION_LOC3;
 
-    // Enable automatic control of the CS line
-    USART1->CTRL |= USART_CTRL_AUTOCS;
+    // Disable automatic control of the CS line
+    USART1->CTRL &= ~USART_CTRL_AUTOCS;
 
     // Enable transmit and receive
     USART1->CMD |= USART_CMD_TXEN | USART_CMD_RXEN;
@@ -55,6 +55,9 @@ void radio_spi_init(void)
     GPIO_PinModeSet(gpioPortD, 7, gpioModePushPull, 0);  // MOSI
     GPIO_PinModeSet(gpioPortC, 14, gpioModePushPull, 0); // CS
     GPIO_PinModeSet(gpioPortC, 15, gpioModePushPull, 0); // CLK
+
+    // Set NSS high
+    radio_spi_select(false);
 
 }
 
@@ -73,7 +76,24 @@ void radio_spi_powerstate(bool state)
  * @param send_data A byte of data to send, set to zero for a read
  * @return          Received byte
  */
-    uint8_t radio_spi_transfer(uint8_t send_data)
+uint8_t radio_spi_transfer(uint8_t send_data)
 {
     return USART_SpiTransfer(USART1, send_data);
+}
+
+/**
+ * Assert or release the NSS line
+ *
+ * @param select Set to true to assert NSS low, false to release
+ */
+void radio_spi_select(bool select)
+{
+    if (select)
+    {
+        GPIO_PinOutClear(gpioPortC, 14);
+    }
+    else
+    {
+        GPIO_PinOutSet(gpioPortC, 14);
+    }
 }

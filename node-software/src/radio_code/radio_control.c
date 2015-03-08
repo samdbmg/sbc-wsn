@@ -87,8 +87,10 @@ static void _radio_write_single_register(uint8_t address, uint8_t data)
     address |= 0x80;
 
     // Write the address first, then the data
+    radio_spi_select(true);
     radio_spi_transfer(address);
     radio_spi_transfer(data);
+    radio_spi_select(false);
 }
 
 /**
@@ -103,8 +105,10 @@ static uint8_t _radio_read_single_register(uint8_t address)
     address &= ~0x80;
 
     // Write the address first, then read data
+    radio_spi_select(true);
     radio_spi_transfer(address);
     uint8_t data = radio_spi_transfer(0);
+    radio_spi_select(false);
 
     return data;
 }

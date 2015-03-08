@@ -11,6 +11,7 @@
 #include "em_emu.h"
 #include "em_cmu.h"
 #include "em_chip.h"
+#include "em_gpio.h"
 
 /* Application includes */
 #include "misc.h"
@@ -32,11 +33,17 @@ int main(void)
     // GPIO pins clock supply
     CMU_ClockEnable(cmuClock_GPIO, true);
 
+    // Set up the error LED as an output line
+    GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
+
     // Initialise the radio chip
-    bool ret = radio_init();
+    if (!radio_init())
+    {
+        GPIO_PinOutSet(gpioPortC, 10);
+    }
 
     // Configure the detection algorithm
-    //detect_init();
+    detect_init();
 
     // Remain in sleep mode unless woken by interrupt
     while (true)
