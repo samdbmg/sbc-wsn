@@ -12,6 +12,7 @@
 #include "em_cmu.h"
 #include "em_chip.h"
 #include "em_acmp.h"
+#include "em_gpio.h"
 
 /* Application-specific includes */
 #include "detect_algorithm.h"
@@ -25,6 +26,8 @@ static void _detect_reset_to_idle(void);
 /* Variable declarations */
 static uint8_t call_count;
 static uint8_t detect_state;
+
+uint32_t g_total_calls = 0;
 
 /**
  * Call the internal functions to start up the SBC detection algorithm
@@ -44,6 +47,9 @@ void detect_init(void)
  */
 static void _detect_timer_config(void)
 {
+    // Run clock to the timer
+    CMU_ClockEnable(cmuClock_TIMER0, true);
+
     const TIMER_Init_TypeDef timerInit =
     {
         .clkSel = timerClkSelHFPerClk,
@@ -80,6 +86,13 @@ static void _detect_timer_config(void)
  */
 static void _detect_comparator_config(void)
 {
+    // Set pins to input
+    GPIO_PinModeSet(gpioPortC, 0, gpioModeInput, 0);
+    GPIO_PinModeSet(gpioPortC, 1, gpioModeInput, 0);
+
+    // Supply a clock to the comparator
+    CMU_ClockEnable(cmuClock_ACMP0, true);
+
     const ACMP_Init_TypeDef acmp_settings =
     {
         false,                              // Full bias current
@@ -91,7 +104,7 @@ static void _detect_comparator_config(void)
         acmpHysteresisLevel3,               // Hysteresis configuration
         0,                                  // Inactive comparator output value
         true,                               // Enable low power mode
-        32,                                 // Vdd reference scaling
+        0,                                  // Vdd reference scaling
         true,                               // Enable ACMP
     };
 
@@ -100,14 +113,18 @@ static void _detect_comparator_config(void)
     // Set the negative input as channel 1, positive as channel 0
     ACMP_ChannelSet(ACMP0, acmpChannel1, acmpChannel0);
 
-    // Activate edge trigger interrupt
-    ACMP_IntEnable(ACMP0, ACMP_IEN_EDGE);
-
     // Wait for comparator to finish starting up
     while (!(ACMP0->STATUS & ACMP_STATUS_ACMPACT))
     {
 
     }
+
+    // Clear interrupt flags
+    ACMP_IntClear(ACMP0, ACMP_IFC_WARMUP);
+    ACMP_IntClear(ACMP0, ACMP_IFC_EDGE);
+
+    // Activate edge trigger interrupt
+    ACMP_IntEnable(ACMP0, ACMP_IEN_EDGE);
 
     // Enable interrupts
     NVIC_ClearPendingIRQ(ACMP0_IRQn);
@@ -120,10 +137,10 @@ static void _detect_comparator_config(void)
  */
 void TIMER0_IRQHandler(void)
 {
+    TIMER_IntClear(TIMER0, TIMER_IFC_OF);
+
     // Stop and reset the timer for next detect
     _detect_reset_to_idle();
-
-    TIMER_IntClear(TIMER0, TIMER_IFC_OF);
 }
 
 /**
@@ -131,12 +148,13 @@ void TIMER0_IRQHandler(void)
  */
 void ACMP0_IRQHandler(void)
 {
+    TIMER_Enable(TIMER0, false);
     uint32_t timer_val = TIMER_CounterGet(TIMER0);
 
     switch(detect_state)
     {
         case DETECT_IDLE:
-           detect_state = DETECT_HIGH;
+            detect_state = DETECT_HIGH;
 
             // Set edge trigger to fire on a falling edge
             ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
@@ -149,7 +167,7 @@ void ACMP0_IRQHandler(void)
 
         case DETECT_HIGH:
             // Did this falling edge arrive approx 1ms after the rise?
-            if (timer_val > get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC))
+            if (timer_val > get_ticks_from_ms(DETECT_HIGH_LB, DETECT_PSC))
             {
                 detect_state = DETECT_LOW;
 
@@ -158,16 +176,20 @@ void ACMP0_IRQHandler(void)
                 ACMP0->CTRL |= ACMP_CTRL_IRISE;
 
                 // Reset the timers again
-                TIMER_Enable(TIMER0, false);
-                TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_LOW_UB, DETECT_PSC));
                 TIMER_CounterSet(TIMER0, 0);
+                TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_LOW_UB, DETECT_PSC));
                 TIMER_Enable(TIMER0, true);
+            }
+            else
+            {
+                g_total_calls++;
+                g_total_calls--;
             }
             break;
 
         case DETECT_LOW:
             // Did this rising edge arrive approx 2ms after the fall?
-            if (timer_val > get_ticks_from_ms(DETECT_LOW_UB, DETECT_PSC))
+            if (timer_val > get_ticks_from_ms(DETECT_LOW_LB, DETECT_PSC))
             {
                 // We got a complete pulse, mark a click
                 call_count++;
@@ -186,11 +208,15 @@ void ACMP0_IRQHandler(void)
                     ACMP0->CTRL |= ACMP_CTRL_IFALL;
 
                     // Reset the timers again
-                    TIMER_Enable(TIMER0, false);
-                    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
                     TIMER_CounterSet(TIMER0, 0);
+                    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
                     TIMER_Enable(TIMER0, true);
                 }
+            }
+            else
+            {
+                g_total_calls++;
+                g_total_calls--;
             }
             break;
     }
@@ -205,8 +231,8 @@ static void _detect_reset_to_idle(void)
 {
     // Stop and reset the timer for next detect
     TIMER_Enable(TIMER0, false);
-    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
     TIMER_CounterSet(TIMER0, 0);
+    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
 
     // Kill timer power
     CMU_ClockEnable(cmuClock_TIMER0, false);
@@ -215,6 +241,7 @@ static void _detect_reset_to_idle(void)
     if (call_count >= DETECT_MINCOUNT)
     {
         //TODO Mark detection
+        g_total_calls++;
     }
 
     // Set edge trigger to fire on a rising edge
