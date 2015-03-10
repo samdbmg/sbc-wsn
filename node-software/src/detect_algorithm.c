@@ -97,11 +97,11 @@ static void _detect_comparator_config(void)
     {
         false,                              // Full bias current
         false,                              // Half bias current
-        7,                                  // Biasprog current configuration
-        false,                              // Enable interrupt for falling edge
+        15,                                 // Biasprog current configuration
+        true,                               // Enable interrupt for falling edge
         true,                               // Enable interrupt for rising edge
         acmpWarmTime256,                    // Warm-up time in clock cycles, >140 cycles for 10us with 14MHz
-        acmpHysteresisLevel3,               // Hysteresis configuration
+        acmpHysteresisLevel0,               // Hysteresis configuration
         0,                                  // Inactive comparator output value
         true,                               // Enable low power mode
         0,                                  // Vdd reference scaling
@@ -112,6 +112,8 @@ static void _detect_comparator_config(void)
 
     // Set the negative input as channel 1, positive as channel 0
     ACMP_ChannelSet(ACMP0, acmpChannel1, acmpChannel0);
+
+    ACMP_GPIOSetup(ACMP0, 0, 1, 0);
 
     // Wait for comparator to finish starting up
     while (!(ACMP0->STATUS & ACMP_STATUS_ACMPACT))
@@ -154,69 +156,81 @@ void ACMP0_IRQHandler(void)
     switch(detect_state)
     {
         case DETECT_IDLE:
-            detect_state = DETECT_HIGH;
+            // Check we now have a high
+            if (ACMP0->STATUS & ACMP_STATUS_ACMPOUT)
+            {
+                detect_state = DETECT_HIGH;
 
-            // Set edge trigger to fire on a falling edge
-            ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
-            ACMP0->CTRL |= ACMP_CTRL_IFALL;
+                // Set edge trigger to fire on a falling edge
+                //ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
+                //ACMP0->CTRL |= ACMP_CTRL_IFALL;
 
-            CMU_ClockEnable(cmuClock_TIMER0, true);
+                CMU_ClockEnable(cmuClock_TIMER0, true);
 
-            TIMER_Enable(TIMER0, true);
+                TIMER_Enable(TIMER0, true);
+            }
             break;
 
         case DETECT_HIGH:
-            // Did this falling edge arrive approx 1ms after the rise?
-            if (timer_val > get_ticks_from_ms(DETECT_HIGH_LB, DETECT_PSC))
+            // Did we get a falling edge?
+            if (!(ACMP0->STATUS & ACMP_STATUS_ACMPOUT))
             {
-                detect_state = DETECT_LOW;
+                // Did this falling edge arrive approx 1ms after the rise?
+                if (timer_val > get_ticks_from_ms(DETECT_HIGH_LB, DETECT_PSC))
+                {
+                    detect_state = DETECT_LOW;
 
-                // Set edge trigger to fire on a rising edge
-                ACMP0->CTRL &= ~ACMP_CTRL_IFALL;
-                ACMP0->CTRL |= ACMP_CTRL_IRISE;
+                    // Set edge trigger to fire on a rising edge
+                    //ACMP0->CTRL &= ~ACMP_CTRL_IFALL;
+                    //ACMP0->CTRL |= ACMP_CTRL_IRISE;
 
-                // Reset the timers again
-                TIMER_CounterSet(TIMER0, 0);
-                TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_LOW_UB, DETECT_PSC));
-                TIMER_Enable(TIMER0, true);
-            }
-            else
-            {
-                g_total_calls++;
-                g_total_calls--;
+                    // Reset the timers again
+                    TIMER_CounterSet(TIMER0, 0);
+                    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_LOW_UB, DETECT_PSC));
+                    TIMER_Enable(TIMER0, true);
+                }
+                else
+                {
+                    g_total_calls++;
+                    g_total_calls--;
+                }
             }
             break;
 
         case DETECT_LOW:
-            // Did this rising edge arrive approx 2ms after the fall?
-            if (timer_val > get_ticks_from_ms(DETECT_LOW_LB, DETECT_PSC))
+            // Was this a rising edge?
+            if (ACMP0->STATUS & ACMP_STATUS_ACMPOUT)
             {
-                // We got a complete pulse, mark a click
-                call_count++;
-
-                // If we now have a full call, reset now ready for the next one
-                if (call_count >= DETECT_MAXCOUNT)
+                // Did this rising edge arrive approx 2ms after the fall?
+                if (timer_val > get_ticks_from_ms(DETECT_LOW_LB, DETECT_PSC))
                 {
-                    _detect_reset_to_idle();
+                    // We got a complete pulse, mark a click
+                    call_count++;
+
+                    // If we now have a full call, reset now ready for the next one
+                    if (call_count >= DETECT_MAXCOUNT)
+                    {
+                        _detect_reset_to_idle();
+                    }
+                    else
+                    {
+                        detect_state = DETECT_HIGH;
+
+                        // Set edge trigger to fire on a falling edge
+                        //ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
+                        //ACMP0->CTRL |= ACMP_CTRL_IFALL;
+
+                        // Reset the timers again
+                        TIMER_CounterSet(TIMER0, 0);
+                        TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
+                        TIMER_Enable(TIMER0, true);
+                    }
                 }
                 else
                 {
-                    detect_state = DETECT_HIGH;
-
-                    // Set edge trigger to fire on a falling edge
-                    ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
-                    ACMP0->CTRL |= ACMP_CTRL_IFALL;
-
-                    // Reset the timers again
-                    TIMER_CounterSet(TIMER0, 0);
-                    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
-                    TIMER_Enable(TIMER0, true);
+                    g_total_calls++;
+                    g_total_calls--;
                 }
-            }
-            else
-            {
-                g_total_calls++;
-                g_total_calls--;
             }
             break;
     }

@@ -8,9 +8,9 @@
 #define DETECT_PSC             2
 
 // Upper and lower bound of detect high and low states
-#define DETECT_HIGH_UB         1.5
+#define DETECT_HIGH_UB         6
 #define DETECT_HIGH_LB         0.7
-#define DETECT_LOW_UB          2.5
+#define DETECT_LOW_UB          6
 #define DETECT_LOW_LB          1.5
 
 #define DETECT_MINCOUNT        5
