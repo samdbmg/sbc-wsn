@@ -13,10 +13,15 @@
 #include "em_chip.h"
 #include "em_usart.h"
 #include "em_gpio.h"
+#include "em_emu.h"
 
 /* Application-specific includes */
 #include "radio_spi_efm32.h"
 #include "misc.h"
+#include "radio_control.h"
+
+// Type of interrupt currently being waited on
+static volatile uint8_t interrupt_state = RADIO_INT_NONE;
 
 /**
  * Configure the SPI peripheral and pins to talk to the radio
@@ -59,6 +64,12 @@ void radio_spi_init(void)
     // Set NSS high
     radio_spi_select(false);
 
+    // Configure the pin change interrupt for DIO0
+    GPIO_PinModeSet(gpioPortB, 11, gpioModeInputPullFilter, 0);
+    GPIO_IntConfig(gpioPortB, 11, true, false, true);
+
+    NVIC_EnableIRQ(GPIO_ODD_IRQn);
+
 }
 
 /**
@@ -95,5 +106,47 @@ void radio_spi_select(bool select)
     else
     {
         GPIO_PinOutSet(gpioPortC, 14);
+    }
+}
+
+/**
+ * Wait until the interrupt pin asserts that transmit is complete.
+ */
+void radio_spi_transmitwait(void)
+{
+    interrupt_state = RADIO_INT_RXREADY;
+
+    // Sleep until the flag is cleared by the interrupt routine
+    while (interrupt_state != RADIO_INT_NONE)
+    {
+        EMU_EnterEM3(true);
+    }
+
+}
+
+/**
+ * Handle an incoming edge on PB11, the radio interrupt pin
+ */
+void GPIO_ODD_IRQHandler(void)
+{
+    // Check the rising edge was on the right pin
+    if ((GPIO_IntGet() & (0x1 << 11)) && GPIO_PinInGet(gpioPortB, 11))
+    {
+        switch(interrupt_state)
+        {
+            case RADIO_INT_TXDONE:
+                // A transmission finished, clear the flag
+                interrupt_state = RADIO_INT_NONE;
+                break;
+            case RADIO_INT_RXREADY:
+                // Payload data is waiting to be read
+                _radio_payload_ready();
+                break;
+            default:
+                // We're not listening for an interrupt, ignore
+                break;
+        }
+
+        GPIO_IntClear(0x1 << 11);
     }
 }

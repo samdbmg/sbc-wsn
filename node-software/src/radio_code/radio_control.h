@@ -10,13 +10,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define RADIO_MAX_PACKET_LEN  61
+
 bool radio_init(void);
 
 // Internal functions for sending and receiving data - exposed for convienience
-bool _radio_send_data(char* data_p, uint16_t length);
-uint16_t _radio_receive_data(char* data_p, uint16_t length);
+bool _radio_send_data(char* data_p, uint16_t length, uint8_t dest_addr);
+uint16_t _radio_retrieve_data(char* data_p, uint16_t length);
+void _radio_activate_receiver(bool activate);
 
-
+// Functions for low-level interrupt routines to make callbacks
+void _radio_payload_ready(void);
 
 
 #endif /* RADIO_CONTROL_H_ */
