@@ -2,7 +2,7 @@
  * Speckled Bush-cricket Call Detection Algorithm
  */
 
-// Standard libraries
+/* Standard libraries */
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -17,6 +17,7 @@
 /* Application-specific includes */
 #include "detect_algorithm.h"
 #include "misc.h"
+#include "power_management.h"
 
 /* Functions used only in this file */
 static void _detect_timer_config(void);
@@ -176,7 +177,11 @@ void ACMP0_IRQHandler(void)
             ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
             ACMP0->CTRL |= ACMP_CTRL_IFALL;
 
+            // Power the timer back up
             CMU_ClockEnable(cmuClock_TIMER0, true);
+
+            // Indicate we need to stay awake to keep the timer on
+            power_set_minimum(PWR_DETECT, PWR_EM1);
 
             // Reset the timers
             TIMER_Enable(TIMER0, false);
@@ -305,4 +310,7 @@ static void _detect_reset_to_idle(void)
     call_count = 0;
     detect_state = DETECT_IDLE;
     transient_count = 0;
+
+    // Mark we're ready to go to sleep
+    power_set_minimum(PWR_DETECT, PWR_EM3);
 }
