@@ -168,7 +168,7 @@ static void generate_call(void)
                 (int32_t)g_initial_call_timer*1000);
 
         // Number of clicks
-        g_clicks_total = (uint8_t)random_percentage_adjust(50, 30,
+        g_clicks_total = (uint8_t)random_percentage_adjust(50, 20,
                 (int32_t)g_clicks_total, INITIAL_CLICK_COUNT);
 
         // Mark/space ratio and call lengths
