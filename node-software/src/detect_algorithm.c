@@ -93,10 +93,6 @@ static void _detect_timer_config(void)
  */
 static void _detect_comparator_config(void)
 {
-    // Set pins to input
-    GPIO_PinModeSet(gpioPortC, 0, gpioModeInput, 0);
-    GPIO_PinModeSet(gpioPortC, 1, gpioModeInput, 0);
-
     // Supply a clock to the comparator
     CMU_ClockEnable(cmuClock_ACMP0, true);
 
@@ -104,7 +100,7 @@ static void _detect_comparator_config(void)
     {
         false,                              // Full bias current
         false,                              // Half bias current
-        15,                                 // Biasprog current configuration
+        9,                                   // Biasprog current configuration
         false,                              // Enable interrupt for falling edge
         true,                               // Enable interrupt for rising edge
         acmpWarmTime256,                    // Warm-up time in clock cycles, >140 cycles for 10us with 14MHz
@@ -294,8 +290,12 @@ static void _detect_reset_to_idle(void)
         //TODO Mark detection
         g_total_calls++;
     }
-
 #ifdef DETECT_DEBUG_ON
+    else
+    {
+        call_count++;
+    }
+
     for (uint8_t i = 0; i < 16; i++)
     {
         debug_data_array[i] = 0;
