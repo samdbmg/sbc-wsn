@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+//#define DEBUG_RADIO 1
+
 #define RADIO_MAX_PACKET_LEN  60
 #define RADIO_RECEIVE_BUFSIZE 1024
 

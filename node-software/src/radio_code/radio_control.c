@@ -24,7 +24,9 @@ static void _radio_write_register(uint8_t address, uint8_t data);
 static uint8_t _radio_read_register(uint8_t address);
 static void _radio_receive_activate(bool activate);
 
+#ifdef DEBUG_RADIO
 static void _radio_read_all(void);
+#endif
 
 /**
  * Configure the radio module ready to send a receive data
@@ -124,7 +126,7 @@ bool radio_send_data(char* data_p, uint16_t length, uint8_t dest_addr)
     _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_TX);
 
     // Wait for interrupt indicating buffer empty
-    radio_spi_transmitwait();
+    radio_spi_transmitwait(true);
 
     // Set the interrupt pin back to default
     _radio_write_register(RADIO_REG_IOMAPPING, RADIO_REG_IOMAP_PAYLOAD);
@@ -323,6 +325,7 @@ void radio_powerstate(bool state)
     }
 }
 
+#ifdef DEBUG_RADIO
 /**
  * Read values from every register
  */
@@ -337,4 +340,4 @@ static void _radio_read_all(void)
         data[addr] = _radio_read_register(addr);
     }
 }
-
+#endif
