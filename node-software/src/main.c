@@ -18,6 +18,7 @@
 #include "detect_algorithm.h"
 #include "radio_control.h"
 #include "power_management.h"
+#include "i2c_sensors.h"
 
 #define NODE_ADDR 0x01
 
@@ -43,22 +44,24 @@ int main(void)
     GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
 
     // Initialise the radio chip
-    if (!radio_init(NODE_ADDR))
+    //if (!radio_init(NODE_ADDR))
     {
         GPIO_PinOutSet(gpioPortC, 10);
-
-        while (true)
-        {
-
-        }
     }
 
     // Configure the detection algorithm
     detect_init();
 
+    // Configure sensors
+    sensors_init();
+
     // Send radio test data
-    radio_powerstate(true);
-    radio_send_data(radio_test_data, 3, 0x00);
+    //radio_powerstate(true);
+    //radio_send_data(radio_test_data, 3, 0x00);
+
+    // Read sensors
+    uint16_t sens_data = sensors_read(SENS_TEMP);
+    sens_data = sensors_read(SENS_HUMID);
 
     // Remain in sleep mode unless woken by interrupt
     while (true)
