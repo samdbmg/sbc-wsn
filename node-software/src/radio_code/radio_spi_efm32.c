@@ -35,13 +35,13 @@ void radio_spi_init(void)
     // Designer tool
     USART_InitSync_TypeDef usart_init = USART_INITSYNC_DEFAULT;
 
-    usart_init.baudrate     = 4000000;
+    usart_init.baudrate     = 1000000;
     usart_init.databits     = usartDatabits8;
     usart_init.msbf         = 1;
     usart_init.master       = 1;
     usart_init.clockMode    = usartClockMode0;
     usart_init.prsRxEnable  = 0;
-    usart_init.autoTx       = 1;
+    usart_init.autoTx       = 0;
 
     USART_InitSync(USART1, &usart_init);
 
@@ -65,7 +65,7 @@ void radio_spi_init(void)
     radio_spi_select(false);
 
     // Configure the pin change interrupt for DIO0
-    GPIO_PinModeSet(gpioPortB, 11, gpioModeInputPullFilter, 0);
+    GPIO_PinModeSet(gpioPortB, 11, gpioModeInput, 0);
     GPIO_IntConfig(gpioPortB, 11, true, false, true);
 
     NVIC_EnableIRQ(GPIO_ODD_IRQn);
@@ -110,18 +110,30 @@ void radio_spi_select(bool select)
 }
 
 /**
- * Wait until the interrupt pin asserts that transmit is complete.
+ * Setup interrupt handler and then wait until the interrupt pin asserts that
+ * transmit is complete.
+ *
+ * Note that this bypasses all the regular power management stuff as
+ * it is a blocking function!
+ *
+ * @param block If true, call will block until interrupt has fired. Otherwise
+ *              state will be updated but will not block - call once with false
+ *              before switching to transmit
  */
-void radio_spi_transmitwait(void)
+void radio_spi_transmitwait(bool block)
 {
-    interrupt_state = RADIO_INT_RXREADY;
-
-    // Sleep until the flag is cleared by the interrupt routine
-    while (interrupt_state != RADIO_INT_NONE)
+    if (!block)
     {
-        EMU_EnterEM3(true);
+        interrupt_state = RADIO_INT_TXDONE;
     }
-
+    else
+    {
+        // Sleep until the flag is cleared by the interrupt routine
+        while (interrupt_state != RADIO_INT_NONE)
+        {
+            EMU_EnterEM3(true);
+        }
+    }
 }
 
 /**

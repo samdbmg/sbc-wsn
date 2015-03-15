@@ -13,25 +13,46 @@
 #include "radio_spi_efm32.h"
 #include "radio_config.h"
 
+static uint8_t node_addr = 0x00;
+
+static uint8_t receive_buffer[RADIO_RECEIVE_BUFSIZE];
+static uint8_t receive_read_ptr = 0;
+static uint8_t receive_write_ptr = 1;
+
 /* Functions used only in this file */
 static void _radio_write_register(uint8_t address, uint8_t data);
 static uint8_t _radio_read_register(uint8_t address);
-static void _radio_powerstate(bool state);
+static void _radio_receive_activate(bool activate);
+
+static void _radio_read_all(void);
 
 /**
  * Configure the radio module ready to send a receive data
  *
  * @return True if the configuration was successful
  */
-bool radio_init(void)
+bool radio_init(uint8_t addr)
 {
+    // Store address
+    node_addr = addr;
+
     // Enable and configure SPI
     radio_spi_init();
 
     // Write a value to the sync register, then read it to check communications
-    _radio_write_register(RADIO_REG_SYNCA, 0xAA);
+    _radio_write_register(RADIO_REG_SYNCA, 0x13);
 
-    if (0xAA != _radio_read_register(RADIO_REG_SYNCA))
+    uint8_t ret = 0x00;
+    uint8_t count = 3;
+
+    while (0x13 != ret && count > 0)
+    {
+        ret = _radio_read_register(RADIO_REG_SYNCA);
+        count--;
+    }
+
+    // If this is true, the counter ran out before we got a response, fail
+    if (0x13 != ret)
     {
         return false;
     }
@@ -44,7 +65,7 @@ bool radio_init(void)
     }
 
     // Drop the radio into low power mode and kill clock supply to the USART
-    _radio_powerstate(false);
+    radio_powerstate(false);
 
     return true;
 }
@@ -57,70 +78,61 @@ bool radio_init(void)
  * @param dest_addr Destination address to send to. 0x00 for broadcast
  * @return        True on send success
  */
-bool _radio_send_data(char* data_p, uint16_t length, uint8_t dest_addr)
+bool radio_send_data(char* data_p, uint16_t length, uint8_t dest_addr)
 {
+    // Make sure we got a sensible amount of data
+    if (length > RADIO_MAX_PACKET_LEN)
+    {
+        return false;
+    }
+
     // Trigger a receiver restart
-    _radio_write_register(RADIO_REG_PACKETCONFIG2,
-            _radio_read_register(RADIO_REG_PACKETCONFIG2) | 0x04);
+    //_radio_write_register(RADIO_REG_PACKETCONFIG2,
+    //        _radio_read_register(RADIO_REG_PACKETCONFIG2) | 0x04);
 
     // Kill receiver to prevent recv during send
-    _radio_activate_receiver(false);
-
-    // Wait for mode update to complete
-    while (!_radio_read_register(RADIO_REG_IRQFLAGS & 0x80))
-    {
-
-    }
+    _radio_receive_activate(false);
 
     // Reconfigure interrupt pin to indicate transmission complete
-    _radio_write_register(RADIO_REG_IOMAPPING, 0x00);
+    _radio_write_register(RADIO_REG_IOMAPPING, RADIO_REG_IOMAP_TXDONE);
 
-    // Start sending data
-    uint16_t data_cursor = 0;
+    // Write data register address byte
+    radio_spi_select(true);
+    radio_spi_transfer(0x80);
 
-    while (length > 0)
+    // Write length byte
+    radio_spi_transfer(length + 3);
+
+    // Write dest address
+    radio_spi_transfer(dest_addr);
+
+    // Write sender address
+    radio_spi_transfer(node_addr);
+
+    // Write payload
+    for (uint8_t cursor = 0; cursor < length; cursor++)
     {
-        uint8_t packet_len;
-        if (length > RADIO_MAX_PACKET_LEN)
-        {
-            length -= RADIO_MAX_PACKET_LEN;
-            packet_len = RADIO_MAX_PACKET_LEN;
-        }
-        else
-        {
-            packet_len = length;
-            length = 0;
-        }
-
-        // Write data register address byte
-        radio_spi_select(true);
-        radio_spi_transfer(0x00);
-
-        // Write length byte
-        radio_spi_transfer(packet_len + 1);
-
-        // Write dest address
-        radio_spi_transfer(dest_addr);
-
-        // Write payload
-        for (; packet_len > 0; packet_len--)
-        {
-            radio_spi_transfer(data_p[data_cursor++]);
-        }
-
-        radio_spi_select(false);
-
-        // Flip to transmit mode to empty buffer
-        _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_TX);
-
-        // Wait for interrupt indicating buffer empty
-        radio_spi_transmitwait();
-
-        // Flip back to standby mode
-        _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+        radio_spi_transfer(data_p[cursor]);
     }
 
-    return false;
+    radio_spi_select(false);
+
+    // Prepare interrupt handler for a transmit interrupt (avoids TX race condition)
+    radio_spi_transmitwait(false);
+
+    // Flip to transmit mode to empty buffer
+    _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_TX);
+
+    // Wait for interrupt indicating buffer empty
+    radio_spi_transmitwait();
+
+    // Set the interrupt pin back to default
+    _radio_write_register(RADIO_REG_IOMAPPING, RADIO_REG_IOMAP_PAYLOAD);
+
+    // Flip back to standby mode
+    _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+
+    return true;
 }
 
 /**
@@ -132,9 +144,43 @@ bool _radio_send_data(char* data_p, uint16_t length, uint8_t dest_addr)
  * @return        Number of bytes retrieved. If 0, buffer empty. If equal to
  *                length parameter, call again as there may be more
  */
-uint16_t _radio_retrieve_data(char* data_p, uint16_t length)
+uint16_t radio_retrieve_data(char* data_p, uint16_t length)
 {
-    return false;
+    if (length >= RADIO_RECEIVE_BUFSIZE)
+    {
+        length = RADIO_RECEIVE_BUFSIZE - 1;
+    }
+
+    uint8_t next_recv_ptr = receive_read_ptr + 1;
+
+    if (next_recv_ptr >= RADIO_RECEIVE_BUFSIZE)
+    {
+        next_recv_ptr = 0;
+    }
+
+    uint8_t data_count = 0;
+
+    while (next_recv_ptr != receive_write_ptr)
+    {
+        *data_p = *(receive_buffer + receive_read_ptr);
+
+        receive_read_ptr = next_recv_ptr;
+        next_recv_ptr++;
+
+        if (next_recv_ptr >= RADIO_RECEIVE_BUFSIZE)
+        {
+            next_recv_ptr = 0;
+        }
+
+        data_count++;
+
+        if (data_count == length)
+        {
+            break;
+        }
+    }
+
+    return data_count;
 }
 
 /**
@@ -143,7 +189,43 @@ uint16_t _radio_retrieve_data(char* data_p, uint16_t length)
  */
 void _radio_payload_ready(void)
 {
-    //TODO
+    radio_spi_select(true);
+
+    // Activate read mode (this way gives sequential reads)
+    radio_spi_transfer(0x00);
+
+    uint8_t payload_size = radio_spi_transfer(0x00);
+
+    // Make sure payload will fit in buffer
+    if (payload_size > RADIO_MAX_PACKET_LEN)
+    {
+        payload_size = RADIO_MAX_PACKET_LEN;
+    }
+
+    // Try and grab an address
+    uint8_t dest_addr = radio_spi_transfer(0x00);
+
+    if (dest_addr == node_addr || dest_addr  == RADIO_BCAST_ADDR)
+    {
+        // Get data (inc sender ID)
+        for (uint8_t i = 0; i <= payload_size; i++)
+        {
+            uint8_t data = radio_spi_transfer(0x00);
+
+            *(receive_buffer + receive_write_ptr++) = data;
+
+            if (receive_write_ptr >= RADIO_RECEIVE_BUFSIZE)
+            {
+                receive_write_ptr = 0;
+            }
+            else
+            {
+                receive_write_ptr++;
+            }
+        }
+    }
+
+    radio_spi_select(false);
 }
 
 /**
@@ -159,6 +241,7 @@ void _radio_receive_activate(bool activate)
     }
     else
     {
+        _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE | RADIO_REG_OPMODE_LISTENABORT);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
     }
 }
@@ -205,19 +288,53 @@ static uint8_t _radio_read_register(uint8_t address)
  * Enable or disable the radio for power reduction. Also shuts down SPI
  * @param state True to power up the radio, false to shutdown
  */
-static void _radio_powerstate(bool state)
+void radio_powerstate(bool state)
 {
     if (state)
     {
         radio_spi_powerstate(true);
 
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+
+        uint8_t ret = 0x00;
+        while (!(ret & RADIO_REG_READYFLAG))
+        {
+            // Wait for radio to wake
+            ret = _radio_read_register(RADIO_REG_IRQFLAGS);
+        }
     }
     else
     {
+        _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_SLEEP | RADIO_REG_OPMODE_LISTENABORT);
+
+        while (!(_radio_read_register(RADIO_REG_IRQFLAGS) & RADIO_REG_READYFLAG))
+        {
+            // Wait for radio to stop listening
+        }
+
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_SLEEP);
 
+        while (!(_radio_read_register(RADIO_REG_IRQFLAGS) & RADIO_REG_READYFLAG))
+        {
+            // Wait for radio to sleep
+        }
+
         radio_spi_powerstate(false);
+    }
+}
+
+/**
+ * Read values from every register
+ */
+static void _radio_read_all(void)
+{
+    uint8_t data[80];
+
+    uint8_t addr;
+
+    for (addr = 0; addr < 80; addr++)
+    {
+        data[addr] = _radio_read_register(addr);
     }
 }
 
