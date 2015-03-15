@@ -37,7 +37,7 @@ bool radio_init(void)
     }
 
     // Write all the radio config parameters
-    for (uint8_t i = 0; i < sizeof(radio_config_data); i++)
+    for (uint8_t i = 0; i < (sizeof(radio_config_data) / sizeof(radio_config_data[0])); i++)
     {
         _radio_write_register(radio_config_data[i][0],
                 radio_config_data[i][1]);
