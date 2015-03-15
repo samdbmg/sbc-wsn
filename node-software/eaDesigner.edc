@@ -1,0 +1,786 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="9">
+<chipConfigPtr class_id="0" tracking_level="1" version="1" object_id="_0">
+	<name>MyName</name>
+	<partName>EFM32ZG222F32</partName>
+	<moduleConfigs class_id="1" tracking_level="0" version="0">
+		<count>23</count>
+		<item_version>0</item_version>
+		<item class_id="2" tracking_level="1" version="1" object_id="_1">
+			<uniqueModuleId>EFM32ZG222F32@ACMP0</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault class_id="3" tracking_level="0" version="0">
+				<count>4</count>
+				<item_version>0</item_version>
+				<item>CH2</item>
+				<item>CH3</item>
+				<item>CH4</item>
+				<item>OUT</item>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore class_id="4" tracking_level="0" version="0">
+				<count>12</count>
+				<item_version>0</item_version>
+				<item class_id="5" tracking_level="0" version="0">
+					<first>bias</first>
+					<second></second>
+				</item>
+				<item>
+					<first>hysteresisLevel</first>
+					<second></second>
+				</item>
+				<item>
+					<first>inactiveValue</first>
+					<second></second>
+				</item>
+				<item>
+					<first>interruptOnFallingEdge</first>
+					<second></second>
+				</item>
+				<item>
+					<first>interruptOnRisingEdge</first>
+					<second>1</second>
+				</item>
+				<item>
+					<first>lowPowerReferenceEnabled</first>
+					<second>0</second>
+				</item>
+				<item>
+					<first>mode</first>
+					<second></second>
+				</item>
+				<item>
+					<first>negSel</first>
+					<second>acmpChannel1</second>
+				</item>
+				<item>
+					<first>posSel</first>
+					<second></second>
+				</item>
+				<item>
+					<first>resistor</first>
+					<second></second>
+				</item>
+				<item>
+					<first>vddLevel</first>
+					<second></second>
+				</item>
+				<item>
+					<first>warmTime</first>
+					<second></second>
+				</item>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_2">
+			<uniqueModuleId>EFM32ZG222F32@ADC0</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_3">
+			<uniqueModuleId>EFM32ZG222F32@AES</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_4">
+			<uniqueModuleId>EFM32ZG222F32@ANALOG</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_5">
+			<uniqueModuleId>EFM32ZG222F32@BOOTLOADER</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_6">
+			<uniqueModuleId>EFM32ZG222F32@CMU</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_7">
+			<uniqueModuleId>EFM32ZG222F32@DBG</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_8">
+			<uniqueModuleId>EFM32ZG222F32@DEC</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_9">
+			<uniqueModuleId>EFM32ZG222F32@DMA</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_10">
+			<uniqueModuleId>EFM32ZG222F32@GPIO</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>1</count>
+				<item_version>0</item_version>
+				<item>PB11</item>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>37</count>
+				<item_version>0</item_version>
+				<item>
+					<first>gpioname_PA0</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PA1</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PA10</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PA2</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PA8</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PA9</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PB11</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PB13</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PB14</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PB7</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PB8</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC0</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC1</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC10</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC11</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC13</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC14</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC15</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC2</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC3</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC4</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC8</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PC9</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PD4</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PD5</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PD6</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PD7</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PE10</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PE11</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PE12</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PE13</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PF0</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PF1</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PF2</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PF3</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PF4</first>
+					<second></second>
+				</item>
+				<item>
+					<first>gpioname_PF5</first>
+					<second></second>
+				</item>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_11">
+			<uniqueModuleId>EFM32ZG222F32@HFXO</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_12">
+			<uniqueModuleId>EFM32ZG222F32@I2C0</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>6</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_13">
+			<uniqueModuleId>EFM32ZG222F32@IDAC0</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_14">
+			<uniqueModuleId>EFM32ZG222F32@LEUART0</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_15">
+			<uniqueModuleId>EFM32ZG222F32@LFXO</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_16">
+			<uniqueModuleId>EFM32ZG222F32@PCNT0</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_17">
+			<uniqueModuleId>EFM32ZG222F32@PRS</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_18">
+			<uniqueModuleId>EFM32ZG222F32@RTC</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>2</count>
+				<item_version>0</item_version>
+				<item>
+					<first>comp0Top</first>
+					<second></second>
+				</item>
+				<item>
+					<first>debugRun</first>
+					<second>1</second>
+				</item>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_19">
+			<uniqueModuleId>EFM32ZG222F32@TIMER0</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_20">
+			<uniqueModuleId>EFM32ZG222F32@TIMER1</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_21">
+			<uniqueModuleId>EFM32ZG222F32@USART1</uniqueModuleId>
+			<enabled>1</enabled>
+			<locationValue>3</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>12</count>
+				<item_version>0</item_version>
+				<item>
+					<first>autoTx</first>
+					<second></second>
+				</item>
+				<item>
+					<first>baudrate</first>
+					<second></second>
+				</item>
+				<item>
+					<first>clockMode</first>
+					<second></second>
+				</item>
+				<item>
+					<first>databits</first>
+					<second></second>
+				</item>
+				<item>
+					<first>master</first>
+					<second></second>
+				</item>
+				<item>
+					<first>mode</first>
+					<second>spi</second>
+				</item>
+				<item>
+					<first>msbf</first>
+					<second>1</second>
+				</item>
+				<item>
+					<first>mvdis</first>
+					<second></second>
+				</item>
+				<item>
+					<first>oversampling</first>
+					<second></second>
+				</item>
+				<item>
+					<first>parity</first>
+					<second></second>
+				</item>
+				<item>
+					<first>prsRxChannel</first>
+					<second></second>
+				</item>
+				<item>
+					<first>stopbits</first>
+					<second></second>
+				</item>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_22">
+			<uniqueModuleId>EFM32ZG222F32@VCMP</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+		<item class_id_reference="2" object_id="_23">
+			<uniqueModuleId>EFM32ZG222F32@WDOG</uniqueModuleId>
+			<enabled>0</enabled>
+			<locationValue>0</locationValue>
+			<signalsWithEnableInvertedFromDefault>
+				<count>0</count>
+				<item_version>0</item_version>
+			</signalsWithEnableInvertedFromDefault>
+			<customKeyValueStore>
+				<count>0</count>
+				<item_version>0</item_version>
+			</customKeyValueStore>
+			<locationLocked>0</locationLocked>
+		</item>
+	</moduleConfigs>
+	<pinConfigs class_id="6" tracking_level="0" version="0">
+		<count>48</count>
+		<item_version>0</item_version>
+		<item class_id="7" tracking_level="1" version="0" object_id="_24">
+			<uniquePinId>EFM32ZG222F32@LQFP48@1</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_25">
+			<uniquePinId>EFM32ZG222F32@LQFP48@2</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_26">
+			<uniquePinId>EFM32ZG222F32@LQFP48@3</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_27">
+			<uniquePinId>EFM32ZG222F32@LQFP48@4</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_28">
+			<uniquePinId>EFM32ZG222F32@LQFP48@5</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_29">
+			<uniquePinId>EFM32ZG222F32@LQFP48@6</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_30">
+			<uniquePinId>EFM32ZG222F32@LQFP48@7</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_31">
+			<uniquePinId>EFM32ZG222F32@LQFP48@8</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_32">
+			<uniquePinId>EFM32ZG222F32@LQFP48@9</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_33">
+			<uniquePinId>EFM32ZG222F32@LQFP48@10</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_34">
+			<uniquePinId>EFM32ZG222F32@LQFP48@11</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_35">
+			<uniquePinId>EFM32ZG222F32@LQFP48@12</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_36">
+			<uniquePinId>EFM32ZG222F32@LQFP48@13</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_37">
+			<uniquePinId>EFM32ZG222F32@LQFP48@14</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_38">
+			<uniquePinId>EFM32ZG222F32@LQFP48@15</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_39">
+			<uniquePinId>EFM32ZG222F32@LQFP48@16</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_40">
+			<uniquePinId>EFM32ZG222F32@LQFP48@17</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_41">
+			<uniquePinId>EFM32ZG222F32@LQFP48@18</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_42">
+			<uniquePinId>EFM32ZG222F32@LQFP48@19</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_43">
+			<uniquePinId>EFM32ZG222F32@LQFP48@20</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_44">
+			<uniquePinId>EFM32ZG222F32@LQFP48@21</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_45">
+			<uniquePinId>EFM32ZG222F32@LQFP48@22</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_46">
+			<uniquePinId>EFM32ZG222F32@LQFP48@23</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_47">
+			<uniquePinId>EFM32ZG222F32@LQFP48@24</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_48">
+			<uniquePinId>EFM32ZG222F32@LQFP48@25</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_49">
+			<uniquePinId>EFM32ZG222F32@LQFP48@26</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_50">
+			<uniquePinId>EFM32ZG222F32@LQFP48@27</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_51">
+			<uniquePinId>EFM32ZG222F32@LQFP48@28</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_52">
+			<uniquePinId>EFM32ZG222F32@LQFP48@29</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_53">
+			<uniquePinId>EFM32ZG222F32@LQFP48@30</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_54">
+			<uniquePinId>EFM32ZG222F32@LQFP48@31</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_55">
+			<uniquePinId>EFM32ZG222F32@LQFP48@32</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_56">
+			<uniquePinId>EFM32ZG222F32@LQFP48@33</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_57">
+			<uniquePinId>EFM32ZG222F32@LQFP48@34</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_58">
+			<uniquePinId>EFM32ZG222F32@LQFP48@35</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_59">
+			<uniquePinId>EFM32ZG222F32@LQFP48@36</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_60">
+			<uniquePinId>EFM32ZG222F32@LQFP48@37</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_61">
+			<uniquePinId>EFM32ZG222F32@LQFP48@38</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_62">
+			<uniquePinId>EFM32ZG222F32@LQFP48@39</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_63">
+			<uniquePinId>EFM32ZG222F32@LQFP48@40</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_64">
+			<uniquePinId>EFM32ZG222F32@LQFP48@41</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_65">
+			<uniquePinId>EFM32ZG222F32@LQFP48@42</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_66">
+			<uniquePinId>EFM32ZG222F32@LQFP48@43</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_67">
+			<uniquePinId>EFM32ZG222F32@LQFP48@44</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_68">
+			<uniquePinId>EFM32ZG222F32@LQFP48@45</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_69">
+			<uniquePinId>EFM32ZG222F32@LQFP48@46</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_70">
+			<uniquePinId>EFM32ZG222F32@LQFP48@47</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+		<item class_id_reference="7" object_id="_71">
+			<uniquePinId>EFM32ZG222F32@LQFP48@48</uniquePinId>
+			<pinConfigStateKey></pinConfigStateKey>
+		</item>
+	</pinConfigs>
+</chipConfigPtr>
