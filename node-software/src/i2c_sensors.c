@@ -61,8 +61,8 @@ void sensors_init(void)
     };
 
     // Pin configuration
-    GPIO_PinModeSet(gpioPortE, 13, gpioModeWiredAndFilter, 0);
-    GPIO_PinModeSet(gpioPortE, 12, gpioModeWiredAndFilter, 0);
+    GPIO_PinModeSet(gpioPortE, 13, gpioModeWiredAndPullUpFilter, 0);
+    GPIO_PinModeSet(gpioPortE, 12, gpioModeWiredAndPullUpFilter, 0);
 
     // Enable pin location
     I2C0->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | I2C_ROUTE_LOCATION_LOC6;
@@ -100,10 +100,11 @@ uint16_t sensors_read(sensor_type_t type)
 
             // Convert back to a real value
             raw_data = _sens_rx_buffer[1] & 0xFC;
-            raw_data |= (_sens_rx_buffer[0] << 8);
+            raw_data |= (((uint16_t)_sens_rx_buffer[0]) << 8);
 
-            // Using formula from datasheet section 6.2
-            uint32_t temp_result = -4685 + (17572 * (raw_data * 100)) / 65536;
+            // Using formula from datasheet section 6.2, scaled to 100x for
+            // avoidance of floating point operations
+            uint64_t temp_result = -4685 + (17572 * ((uint64_t)raw_data * 100)) / 6553600;
             result = (uint16_t)(temp_result/100);
             break;
 
@@ -111,16 +112,16 @@ uint16_t sensors_read(sensor_type_t type)
             // Prepare some instructions
             _sens_tx_buffer[0] = 0xE5;
 
-            // Request temperature
+            // Request humidity
             _sensors_send_instruction(SENS_TEMP_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
 
             // Convert back to a real value
             raw_data = _sens_rx_buffer[1] & 0xFC;
-            raw_data |= (_sens_rx_buffer[0] << 8);
+            raw_data |= (((uint16_t)_sens_rx_buffer[0]) << 8);
 
             // Using formula from datasheet section 6.1
-            int32_t humid_result = -6 + (125 * raw_data) / 65536;
-            result = (uint16_t)(humid_result/100);
+            uint32_t humid_result = -6 + (125 * (uint32_t)raw_data) / 65536;
+            result = (uint16_t)(humid_result);
             break;
         default:
             break;
@@ -137,7 +138,7 @@ uint16_t sensors_read(sensor_type_t type)
  * (sleeps when waiting). Don't set rxlen or txlen to be longer than their
  * buffer sizes
  *
- * @param addr  Address of slave I2C sensor
+ * @param addr  Address of slave I2C sensor. Will be left shifted by 1 for R/W flag
  * @param flags I2C_FLAG_x flags
  * @param txlen Number of bytes from TX buffer to write
  * @param rxlen Number of bytes to read into RX buffer
@@ -146,7 +147,7 @@ static void _sensors_send_instruction(uint8_t addr, uint16_t flags,
         uint8_t txlen, uint8_t rxlen)
 {
     // Configure transfer parameters
-    _sens_transfer.addr = addr;
+    _sens_transfer.addr = (addr << 1);
     _sens_transfer.flags = flags;
     _sens_transfer.buf[0].len = txlen;
     _sens_transfer.buf[1].len = rxlen;
