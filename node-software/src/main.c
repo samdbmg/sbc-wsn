@@ -53,6 +53,9 @@ int main(void)
     // Set up the error LED as an output line
     GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
 
+    // Configure the delay function
+    misc_delay_init();
+
     // Initialise the radio chip
     if (!radio_init(NODE_ADDR, got_packet_data))
     {
@@ -71,8 +74,9 @@ int main(void)
     radio_receive_activate(true);
 
     // Read sensors
-    uint16_t sens_data = sensors_read(SENS_TEMP);
-    sens_data = sensors_read(SENS_HUMID);
+    uint16_t temp_data = sensors_read(SENS_TEMP);
+    uint16_t hum_data = sensors_read(SENS_HUMID);
+    uint16_t light_data = sensors_read(SENS_LIGHT);
 
     // Remain in sleep mode unless woken by interrupt
     while (true)

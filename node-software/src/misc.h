@@ -10,7 +10,10 @@
 #define TIMER_PRESCALER (2)
 
 // Given a prescaler value (y) and a desired time in ms (x), calculate timer ticks
-#define get_ticks_from_ms(x, y)  ((x) * CORE_CLOCK_FREQ)/(1000 * (y))
+#define get_ticks_from_ms(x, y)  ((uint64_t)(x) * CORE_CLOCK_FREQ)/(1000 * (y))
+
+void misc_delay(uint16_t ms);
+void misc_delay_init(void);
 
 
 #endif /* MISC_H_ */

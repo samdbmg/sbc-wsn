@@ -16,11 +16,13 @@
 /* Application-specific includes */
 #include "i2c_sensors.h"
 #include "power_management.h"
+#include "misc.h"
 
 #define SENS_TEMP_ADDR 0x40
+#define SENS_LIGHT_ADDR 0x29
 
-static void _sensors_send_instruction(uint8_t addr, uint16_t flags,
-        uint8_t txlen, uint8_t rxlen);
+static void _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
+        uint8_t rxlen);
 
 // Create some storage for I2C transfers
 static uint8_t _sens_tx_buffer[3];
@@ -76,6 +78,22 @@ void sensors_init(void)
 
     I2C0->CTRL |= I2C_CTRL_AUTOACK | I2C_CTRL_AUTOSN;
 
+    // Configure the light-level sensor to have 10 integration cycles
+    _sens_tx_buffer[0] = 0xA0;
+    _sens_tx_buffer[1] = 0x01;
+    _sens_tx_buffer[2] = 0xF6;
+    _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 3, 0);
+
+    // And 4x gain
+    _sens_tx_buffer[0] = 0x8F;
+    _sens_tx_buffer[1] = 0x01;
+    _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0);
+
+    // And put it back to sleep
+    _sens_tx_buffer[0] = 0x80;
+    _sens_tx_buffer[1] = 0x00;
+    _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0);
+
     // Power down until needed
     CMU_ClockEnable(cmuClock_I2C0, false);
 
@@ -83,7 +101,7 @@ void sensors_init(void)
 
 uint16_t sensors_read(sensor_type_t type)
 {
-    power_set_minimum(PWR_SENSOR, PWR_EM1);
+    power_set_minimum(PWR_SENSOR, PWR_EM3);
     CMU_ClockEnable(cmuClock_I2C0, true);
 
     uint16_t result;
@@ -96,7 +114,7 @@ uint16_t sensors_read(sensor_type_t type)
             _sens_tx_buffer[0] = 0xE3;
 
             // Request temperature
-            _sensors_send_instruction(SENS_TEMP_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
+            _sensors_send(SENS_TEMP_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
 
             // Convert back to a real value
             raw_data = _sens_rx_buffer[1] & 0xFC;
@@ -113,7 +131,7 @@ uint16_t sensors_read(sensor_type_t type)
             _sens_tx_buffer[0] = 0xE5;
 
             // Request humidity
-            _sensors_send_instruction(SENS_TEMP_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
+            _sensors_send(SENS_TEMP_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
 
             // Convert back to a real value
             raw_data = _sens_rx_buffer[1] & 0xFC;
@@ -123,6 +141,45 @@ uint16_t sensors_read(sensor_type_t type)
             uint32_t humid_result = -6 + (125 * (uint32_t)raw_data) / 65536;
             result = (uint16_t)(humid_result);
             break;
+
+        case SENS_LIGHT:
+            // First wake the sensor and start a conversion
+            _sens_tx_buffer[0] = 0x80;
+            _sens_tx_buffer[1] = 0x03;
+            _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0);
+
+            // Prepare to read the status register
+            _sens_tx_buffer[0] = 0x93;
+
+            // Wait for conversion completion
+            bool avalid = false;
+            while (!avalid)
+            {
+                misc_delay(30);
+
+                _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
+
+                if (_sens_rx_buffer[0] & 0x01)
+                {
+                    avalid = true;
+                }
+            }
+
+            // Go and read the data for "clear"
+            _sens_tx_buffer[0] = 0xB4;
+            _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
+
+            raw_data = _sens_rx_buffer[0];
+            raw_data |= ((uint16_t)_sens_rx_buffer[1]) << 8;
+
+            // Now power down the sensor
+            _sens_tx_buffer[0] = 0x80;
+            _sens_tx_buffer[1] = 0x00;
+            _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0);
+
+            result = raw_data;
+            break;
+
         default:
             break;
     }
@@ -143,8 +200,8 @@ uint16_t sensors_read(sensor_type_t type)
  * @param txlen Number of bytes from TX buffer to write
  * @param rxlen Number of bytes to read into RX buffer
  */
-static void _sensors_send_instruction(uint8_t addr, uint16_t flags,
-        uint8_t txlen, uint8_t rxlen)
+static void _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
+        uint8_t rxlen)
 {
     // Configure transfer parameters
     _sens_transfer.addr = (addr << 1);
@@ -157,10 +214,6 @@ static void _sensors_send_instruction(uint8_t addr, uint16_t flags,
 
     // Actually start sending commands
     I2C_TransferInit(I2C0, &_sens_transfer);
-
-    while (I2C_Transfer(I2C0) == i2cTransferInProgress){;}
-
-    return;
 
     // Wait for transfer completion
     while (_sens_i2c_active)
