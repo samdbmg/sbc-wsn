@@ -22,8 +22,18 @@
 
 #define NODE_ADDR 0x01
 
+char radio_test_data[] = "\x01Hi";
 
-char radio_test_data[] = "Hi";
+void got_packet_data(uint16_t bytes)
+{
+    uint8_t data[5] = {0};
+
+    // Read data from ringbuffer
+    uint16_t read = radio_retrieve_data(data, 5);
+
+    // Power down radio
+    radio_powerstate(false);
+}
 
 /**
  * Main function. Initialises peripherals and lets interrupts do the work.
@@ -44,7 +54,7 @@ int main(void)
     GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
 
     // Initialise the radio chip
-    //if (!radio_init(NODE_ADDR))
+    if (!radio_init(NODE_ADDR, got_packet_data))
     {
         GPIO_PinOutSet(gpioPortC, 10);
     }
@@ -56,8 +66,9 @@ int main(void)
     sensors_init();
 
     // Send radio test data
-    //radio_powerstate(true);
-    //radio_send_data(radio_test_data, 3, 0x00);
+    radio_powerstate(true);
+    radio_send_data(radio_test_data, 3, 0x01);
+    radio_receive_activate(true);
 
     // Read sensors
     uint16_t sens_data = sensors_read(SENS_TEMP);

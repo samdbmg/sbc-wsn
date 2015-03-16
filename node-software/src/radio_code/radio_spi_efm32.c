@@ -19,6 +19,7 @@
 #include "radio_spi_efm32.h"
 #include "misc.h"
 #include "radio_control.h"
+#include "power_management.h"
 
 // Type of interrupt currently being waited on
 static volatile uint8_t interrupt_state = RADIO_INT_NONE;
@@ -110,30 +111,24 @@ void radio_spi_select(bool select)
 }
 
 /**
- * Setup interrupt handler and then wait until the interrupt pin asserts that
- * transmit is complete.
- *
- * Note that this bypasses all the regular power management stuff as
- * it is a blocking function!
- *
- * @param block If true, call will block until interrupt has fired. Otherwise
- *              state will be updated but will not block - call once with false
- *              before switching to transmit
+ * Wait until the interrupt pin asserts that transmit is complete.
  */
-void radio_spi_transmitwait(bool block)
+void radio_spi_transmitwait(void)
 {
-    if (!block)
+    // Sleep until the flag is cleared by the interrupt routine
+    while (interrupt_state != RADIO_INT_NONE)
     {
-        interrupt_state = RADIO_INT_TXDONE;
+        power_sleep();
     }
-    else
-    {
-        // Sleep until the flag is cleared by the interrupt routine
-        while (interrupt_state != RADIO_INT_NONE)
-        {
-            EMU_EnterEM3(true);
-        }
-    }
+}
+
+/**
+ * Prepare to wait for a radio interrupt type by setting the type expected
+ * @param interrupt Interrupt to wait for, one of RADIO_INT_n
+ */
+void radio_spi_prepinterrupt(uint8_t interrupt)
+{
+    interrupt_state = interrupt;
 }
 
 /**

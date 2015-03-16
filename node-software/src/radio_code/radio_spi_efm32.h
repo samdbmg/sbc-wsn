@@ -17,6 +17,7 @@ void radio_spi_powerstate(bool state);
 uint8_t radio_spi_transfer(uint8_t send_data);
 void radio_spi_select(bool select);
 
-void radio_spi_transmitwait(bool block);
+void radio_spi_transmitwait(void);
+void radio_spi_prepinterrupt(uint8_t interrupt);
 
 #endif /* RADIO_SPI_EFM32_H_ */
