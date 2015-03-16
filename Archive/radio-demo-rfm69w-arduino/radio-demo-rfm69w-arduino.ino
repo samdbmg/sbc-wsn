@@ -81,7 +81,7 @@ void setup() {
 #ifdef IS_RFM69HW
   radio.setHighPower(); //only for RFM69HW!
 #endif
-  radio.encrypt(ENCRYPTKEY);
+  radio.encrypt(0);
   char buff[50];
   sprintf(buff, "\nListening at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
@@ -89,6 +89,8 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
   attachInterrupt(BUTTON_INT, handleButton, FALLING);
+  
+  radio.readAllRegs();
 }
 
 //******** THIS IS INTERRUPT BASED DEBOUNCING FOR BUTTON ATTACHED TO D3 (INTERRUPT 1)
@@ -117,7 +119,7 @@ void loop() {
   if (i > 0x2FFFE && digitalRead(BUTTON_PIN))
   {
     i = 0;
-    buttonPressed = true;
+    //buttonPressed = true;
   }
   
   if (buttonPressed)
@@ -132,6 +134,12 @@ void loop() {
   //check if something was received (could be an interrupt from the radio)
   if (radio.receiveDone())
   {
+    Serial.println("Receive got");
+    Serial.println(radio.DATALEN);
+    Serial.println(radio.DATA[0]);
+    Serial.println(radio.DATA[1]);
+    Serial.println(radio.DATA[2]);
+    
     //check if received message is 2 bytes long, and check if the message is specifically "Hi"
     if (radio.DATALEN==2 && radio.DATA[0]=='H' && radio.DATA[1]=='i')
     {
@@ -153,6 +161,11 @@ void loop() {
       radio.sendACK();
       Serial.println(" - ACK sent");
       //digitalWrite(LED, !digitalRead(LED));
+    }
+    else
+    {
+      radio.send(RECEIVER, "Hi", 2, false);
+      Serial.println("Response sent");
     }
   }
   
