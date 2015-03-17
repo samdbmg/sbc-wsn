@@ -28,6 +28,9 @@
 #define FEMALE_RESPONSE_PERIOD 10
 #define FEMALE_RESPONSE_DELAY_MS 25
 
+// Do we want to be able to debug the CPU with the ST-Link?
+#define DEBUG_ENABLE 1
+
 /* Declare functions used only in this file */
 // Mark/space timer IRQ
 void TIM4_IRQHandler(void);
@@ -190,6 +193,11 @@ static void generate_call(void)
  */
 void main(void)
 {
+#if DEBUG_ENABLE
+    // To prevent random debugger disconnects, set this
+    DBGMCU_Config(DBGMCU_SLEEP | DBGMCU_STOP | DBGMCU_STANDBY, ENABLE);
+#endif
+
     // Configure a board LED to illuminate while calling
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
 
