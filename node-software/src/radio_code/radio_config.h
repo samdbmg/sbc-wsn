@@ -1,5 +1,7 @@
 /**
  * Configuration variables for RFM69W radio module, plus register definitions
+ *
+ * Be careful, this file is shared between base and node software!
  */
 
 #ifndef RADIO_CONFIG_H_

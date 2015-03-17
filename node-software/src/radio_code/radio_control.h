@@ -2,6 +2,8 @@
  * Protocol control for RFM69W radio module - header file
  * This code should provide high-level control of the module without making any
  * processor-specific calls so should be fairly portable
+ *
+ * Be careful, this file is shared between base and node software!
  */
 
 #ifndef RADIO_CONTROL_H_

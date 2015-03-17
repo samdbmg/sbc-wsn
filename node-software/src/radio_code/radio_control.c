@@ -2,6 +2,8 @@
  * Protocol control for RFM69W radio module - header file
  * This code should provide high-level control of the module without making any
  * processor-specific calls so should be fairly portable
+ *
+ * Be careful, this file is shared between base and node software!
  */
 
 /* Standard libraries */
@@ -10,15 +12,15 @@
 
 /* Application-specific headers */
 #include "radio_control.h"
-#include "radio_spi_efm32.h"
+#include "radio_spi.h"
 #include "radio_config.h"
 
 static uint8_t node_addr = 0x00;
 
 // Receiver ring buffer
 static uint8_t receive_buffer[RADIO_RECEIVE_BUFSIZE];
-static uint8_t receive_read_ptr = 0;
-static uint8_t receive_write_ptr = 0;
+static uint16_t receive_read_ptr = 0;
+static uint16_t receive_write_ptr = 0;
 
 // Callback to run when receiving a new packet
 void (*_radio_packet_callback)(uint16_t) = 0x0;
@@ -27,9 +29,7 @@ void (*_radio_packet_callback)(uint16_t) = 0x0;
 static void _radio_write_register(uint8_t address, uint8_t data);
 static uint8_t _radio_read_register(uint8_t address);
 
-#ifdef DEBUG_RADIO
 static void _radio_read_all(void);
-#endif
 
 /**
  * Configure the radio module ready to send a receive data
@@ -89,15 +89,15 @@ bool radio_init(uint8_t addr, void (*callback)(uint16_t))
 bool radio_send_data(uint8_t* data_p, uint16_t length, uint8_t dest_addr)
 {
     _radio_read_all();
+
     // Make sure we got a sensible amount of data
     if (length > RADIO_MAX_PACKET_LEN)
     {
         return false;
     }
 
-    // Trigger a receiver restart
-    //_radio_write_register(RADIO_REG_PACKETCONFIG2,
-    //        _radio_read_register(RADIO_REG_PACKETCONFIG2) | 0x04);
+    // Find out if we're receiving to reset when done
+    bool recv_active = _radio_read_register(RADIO_REG_OPMODE) & 0x40;
 
     // Kill receiver to prevent recv during send
     radio_receive_activate(false);
@@ -110,7 +110,7 @@ bool radio_send_data(uint8_t* data_p, uint16_t length, uint8_t dest_addr)
     radio_spi_transfer(0x80);
 
     // Write length byte
-    radio_spi_transfer(length + 2);
+    radio_spi_transfer((uint8_t)(length + 2));
 
     // Write dest address
     radio_spi_transfer(dest_addr);
@@ -138,8 +138,8 @@ bool radio_send_data(uint8_t* data_p, uint16_t length, uint8_t dest_addr)
     // Set the interrupt pin back to default
     _radio_write_register(RADIO_REG_IOMAPPING, RADIO_REG_IOMAP_PAYLOAD);
 
-    // Flip back to standby mode
-    _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+    // Flip back to standby or receive mode
+    radio_receive_activate(recv_active);
 
     return true;
 }
@@ -199,11 +199,11 @@ void _radio_payload_ready(void)
     uint16_t space_left;
     if (receive_read_ptr > receive_write_ptr)
     {
-        space_left = receive_read_ptr - receive_write_ptr - 1;
+        space_left = (uint16_t)(receive_read_ptr - receive_write_ptr - 1);
     }
     else
     {
-        space_left = RADIO_RECEIVE_BUFSIZE - receive_write_ptr + receive_read_ptr - 1;
+        space_left = (uint16_t)(RADIO_RECEIVE_BUFSIZE - receive_write_ptr + receive_read_ptr - 1);
     }
 
     if (payload_size - 1 > space_left)
@@ -240,7 +240,7 @@ void _radio_payload_ready(void)
     radio_spi_select(false);
 
     // Run callback function
-    _radio_packet_callback(payload_size - 1);
+    _radio_packet_callback((uint16_t)(payload_size - 1));
 }
 
 /**
@@ -290,7 +290,7 @@ static void _radio_write_register(uint8_t address, uint8_t data)
 static uint8_t _radio_read_register(uint8_t address)
 {
     // Ensure address has write flag cleared
-    address &= ~0x80;
+    address &= (uint8_t)(~0x80);
 
     // Write the address first, then read data
     radio_spi_select(true);
@@ -340,12 +340,13 @@ void radio_powerstate(bool state)
     }
 }
 
-#ifdef DEBUG_RADIO
+
 /**
- * Read values from every register
+ * Read values from every register (function does nothing if debug mode is off)
  */
 static void _radio_read_all(void)
 {
+#ifdef DEBUG_RADIO
     uint8_t data[80];
 
     uint8_t addr;
@@ -354,5 +355,5 @@ static void _radio_read_all(void)
     {
         data[addr] = _radio_read_register(addr);
     }
-}
 #endif
+}

@@ -16,7 +16,7 @@
 #include "em_emu.h"
 
 /* Application-specific headers */
-#include "radio_spi_efm32.h"
+#include "radio_spi.h"
 #include "misc.h"
 #include "radio_control.h"
 #include "power_management.h"
