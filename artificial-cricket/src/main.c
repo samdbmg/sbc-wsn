@@ -1,13 +1,16 @@
-/*
+/**
  * Artificial cricket main file
  *
  */
+
+/* Standard libraries */
 #include <stdio.h>
+#include <stdbool.h>
 
 /* Board support headers */
 #include "stm32f4xx.h"
 
-/* Application specific headers */
+/* Application-specific headers */
 #include "timer_config.h"
 #include "random_adjust.h"
 #include "user_switch.h"

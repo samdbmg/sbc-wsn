@@ -1,15 +1,21 @@
-/*
- * Function to activate the user switch and interrupts to use it header
+/**
+ * Function to activate the user switch and interrupts to use it
  *
  */
 
-/* Board support includes */
+/* Standard libraries */
+#include <stdio.h>
+
+/* Board support headers */
 #include "stm32f4xx.h"
 #include "stm32f4xx_GPIO.h"
 
-/* Application specific include */
+/* Application-specific headers */
 #include "user_switch.h"
 
+/**
+ * Initialise the user switch and interrupt line
+ */
 void user_switch_init(void)
 {
     // Configure the User switch to trigger a call

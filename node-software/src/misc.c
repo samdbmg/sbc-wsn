@@ -7,13 +7,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Peripheral control includes */
+/* Peripheral control headers */
 #include "em_device.h"
 #include "em_cmu.h"
 #include "em_chip.h"
 #include "em_timer.h"
 
-/* Application-specific includes */
+/* Application-specific headers */
 #include "misc.h"
 #include "power_management.h"
 

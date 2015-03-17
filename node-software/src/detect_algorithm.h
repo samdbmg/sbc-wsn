@@ -1,5 +1,5 @@
 /**
- * Speckled Bush-cricket Call Detection Algorithm - header
+ * Speckled Bush-cricket Call Detection Algorithm - header file
  */
 #ifndef DETECT_ALGORITHM_H_
 #define DETECT_ALGORITHM_H_

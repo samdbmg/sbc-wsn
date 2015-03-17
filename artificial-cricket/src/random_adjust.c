@@ -1,13 +1,14 @@
-/*
+/**
  * Functions to generate random variation using the on-chip RNG
  */
 
+/* Standard libraries */
 #include <stdlib.h>
 
 /* Board support headers */
 #include "stm32f4xx.h"
 
-/* Application specific headers */
+/* Application-specific headers */
 #include "random_adjust.h"
 
 /**

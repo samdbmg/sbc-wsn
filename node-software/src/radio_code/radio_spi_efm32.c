@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Peripheral control includes */
+/* Peripheral control headers */
 #include "em_device.h"
 #include "em_cmu.h"
 #include "em_chip.h"
@@ -15,7 +15,7 @@
 #include "em_gpio.h"
 #include "em_emu.h"
 
-/* Application-specific includes */
+/* Application-specific headers */
 #include "radio_spi_efm32.h"
 #include "misc.h"
 #include "radio_control.h"

@@ -1,12 +1,10 @@
 /**
- * Artificial cricket control timers setup header
+ * Artificial cricket control timers setup - header file
  *
  */
 
 #ifndef TIMER_CONFIG_H_
 #define TIMER_CONFIG_H_
-
-#include <stdbool.h>
 
 /* Function declarations */
 void pwm_timer_setup(void);

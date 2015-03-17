@@ -6,14 +6,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Peripheral control libraries */
+/* Peripheral control headers */
 #include "em_device.h"
 #include "em_emu.h"
 #include "em_cmu.h"
 #include "em_chip.h"
 #include "em_gpio.h"
 
-/* Application includes */
+/* Application-specific headers */
 #include "misc.h"
 #include "detect_algorithm.h"
 #include "radio_control.h"

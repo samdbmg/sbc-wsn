@@ -1,9 +1,9 @@
-/*
+/**
  * Artificial cricket control timers setup
  *
  */
 
-
+/* Standard libraries */
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -13,7 +13,7 @@
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_rcc.h"
 
-/* Application specific headers */
+/* Application-specific headers */
 #include "timer_config.h"
 
 static uint32_t g_call_period_ms;

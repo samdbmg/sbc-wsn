@@ -1,5 +1,5 @@
-/*
- * Functions to generate random variation using the on-chip RNG header
+/**
+ * Functions to generate random variation using the on-chip RNG - header file
  */
 
 #ifndef RANDOM_ADJUST_H

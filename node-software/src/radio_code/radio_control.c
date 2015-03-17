@@ -4,11 +4,11 @@
  * processor-specific calls so should be fairly portable
  */
 
-// Standard libraries
+/* Standard libraries */
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Application-specific includes */
+/* Application-specific headers */
 #include "radio_control.h"
 #include "radio_spi_efm32.h"
 #include "radio_config.h"

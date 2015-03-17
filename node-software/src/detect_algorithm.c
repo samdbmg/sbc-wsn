@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Peripheral control includes */
+/* Peripheral control headers */
 #include "em_device.h"
 #include "em_timer.h"
 #include "em_cmu.h"
@@ -14,7 +14,7 @@
 #include "em_acmp.h"
 #include "em_gpio.h"
 
-/* Application-specific includes */
+/* Application-specific headers */
 #include "detect_algorithm.h"
 #include "misc.h"
 #include "power_management.h"

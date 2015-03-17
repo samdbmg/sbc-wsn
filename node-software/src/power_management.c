@@ -6,11 +6,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Peripheral control includes */
+/* Peripheral control headers */
 #include "em_device.h"
 #include "em_emu.h"
 
-/* Application-specific includes */
+/* Application-specific headers */
 #include "power_management.h"
 
 // Storage for all the power management bits

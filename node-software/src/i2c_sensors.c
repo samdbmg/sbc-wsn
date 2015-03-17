@@ -1,19 +1,19 @@
 /**
- * Environment sensors interface - header
+ * Environment sensors interface - header file
  */
 
 /* Standard libraries */
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Peripheral control includes */
+/* Peripheral control headers */
 #include "em_device.h"
 #include "em_cmu.h"
 #include "em_chip.h"
 #include "em_gpio.h"
 #include "em_i2c.h"
 
-/* Application-specific includes */
+/* Application-specific headers */
 #include "i2c_sensors.h"
 #include "power_management.h"
 #include "misc.h"

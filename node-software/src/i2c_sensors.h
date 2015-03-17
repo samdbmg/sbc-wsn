@@ -1,5 +1,5 @@
 /**
- * Environment sensors interface - header
+ * Environment sensors interface - header file
  */
 
 #ifndef I2C_SENSORS_H_

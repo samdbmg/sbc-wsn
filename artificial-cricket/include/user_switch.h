@@ -1,5 +1,5 @@
-/*
- * Function to activate the user switch and interrupts to use it header
+/**
+ * Function to activate the user switch and interrupts to use it - header file
  *
  */
 
