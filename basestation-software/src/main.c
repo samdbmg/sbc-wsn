@@ -12,6 +12,8 @@
 #include "radio_control.h"
 #include "power_management.h"
 
+#define DEBUG_ENABLE 1
+
 #define NODE_ADDR 0xFF
 
 void got_packet_data(uint16_t bytes);
@@ -43,8 +45,19 @@ void got_packet_data(uint16_t bytes)
  */
 void main(void)
 {
+#ifdef DEBUG_ENABLE
+    // Prevent random debugger disconnects
+    DBGMCU_Config(DBGMCU_SLEEP | DBGMCU_STOP | DBGMCU_STANDBY, ENABLE);
+#endif
+
     // Configure the radio
-    radio_init(0xFF, got_packet_data);
+    if (!radio_init(0xFF, got_packet_data))
+    {
+        while (1)
+        {
+
+        }
+    }
 
     // Set up for receive
     radio_powerstate(true);
