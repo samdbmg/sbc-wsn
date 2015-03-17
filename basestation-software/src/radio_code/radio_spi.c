@@ -26,8 +26,9 @@ static volatile uint8_t interrupt_state = RADIO_INT_NONE;
  */
 void radio_spi_init(void)
 {
-    // Power up SPI module clock
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+    // Power up SPI module clocks
+    radio_spi_powerstate(true);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
     // Set up SPI pins
     GPIO_InitTypeDef gpioInit =
@@ -54,7 +55,7 @@ void radio_spi_init(void)
     // Configure the SPI peripheral itself
     SPI_InitTypeDef spiInit =
     {
-            .SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4,
+            .SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64,
             .SPI_CPHA = SPI_CPHA_1Edge,
             .SPI_CPOL = SPI_CPOL_Low,
             .SPI_CRCPolynomial = 7,
@@ -75,7 +76,7 @@ void radio_spi_init(void)
             .GPIO_Mode = GPIO_Mode_IN,
             .GPIO_Pin = GPIO_Pin_8,
             .GPIO_PuPd = GPIO_PuPd_NOPULL,
-            .GPIO_Speed = GPIO_Speed_50MHz
+            .GPIO_Speed = GPIO_Speed_2MHz
     };
     GPIO_Init(GPIOA, &gpioIntInit);
 
@@ -102,9 +103,6 @@ void radio_spi_init(void)
     nvicStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&nvicStructure);
 
-    // Power everything down
-    radio_spi_powerstate(false);
-
 }
 
 /**
@@ -113,6 +111,7 @@ void radio_spi_init(void)
  */
 void radio_spi_powerstate(bool state)
 {
+    //RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, (state ? ENABLE : DISABLE));
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, (state ? ENABLE : DISABLE));
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, (state ? ENABLE : DISABLE));
 }
@@ -125,13 +124,15 @@ void radio_spi_powerstate(bool state)
  */
 uint8_t radio_spi_transfer(uint8_t send_data)
 {
-    SPI_I2S_SendData(SPI1, send_data);
+    SPI1->DR = send_data;
 
-    // Wait for RX buffer to fill
-    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET)
-    {
+    /* Wait for transmission to complete */
+    while ((SPI1->SR & SPI_SR_TXE) == 0);
+    /* Wait for received data to complete */
+    while ((SPI1->SR & SPI_SR_RXNE) == 0);
+    /* Wait for SPI to be ready */
+    while (SPI1->SR & SPI_SR_BSY);
 
-    }
 
     return (uint8_t)SPI_I2S_ReceiveData(SPI1);
 }
