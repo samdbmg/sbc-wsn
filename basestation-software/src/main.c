@@ -11,6 +11,7 @@
 /* Application includes */
 #include "radio_control.h"
 #include "power_management.h"
+#include "serial_interface.h"
 
 #define DEBUG_ENABLE 1
 
@@ -50,18 +51,30 @@ void main(void)
     DBGMCU_Config(DBGMCU_SLEEP | DBGMCU_STOP | DBGMCU_STANDBY, ENABLE);
 #endif
 
+    // Activate the serial interface
+    serial_init();
+    serial_print("\r\n\r\nStarting up..\r\n\r\n");
+
     // Configure the radio
     if (!radio_init(0xFF, got_packet_data))
     {
+        serial_print("Radio setup failed\r\nLooping.");
         while (1)
         {
 
         }
     }
+    else
+    {
+        serial_print("Radio setup done.\r\n");
+    }
 
     // Set up for receive
     radio_powerstate(true);
+    radio_send_data("Hi", 2, 0x01);
     radio_receive_activate(true);
+
+    serial_print("Startup done. Sleeping\r\n");
 
     // Go to sleep. Interrupts will do the rest
     while (1)
