@@ -16,4 +16,6 @@ void power_set_minimum(power_system_t system, power_min_t minimum);
 
 void power_sleep(void);
 
+void power_schedule(void (*fn)(void));
+
 #endif /* POWER_MANAGEMENT_H_ */

@@ -18,6 +18,9 @@ static power_system_store_t systems_em0 = 0x0;
 static power_system_store_t systems_em1 = 0x0;
 static power_system_store_t systems_em2 = 0x0;
 
+// Scheduled function to run next we sleep
+static void (*sched_func)(void);
+
 /**
  * Allow a system to indicate the minimum power state it can currently operate
  * at
@@ -61,6 +64,15 @@ void power_set_minimum(power_system_t system, power_min_t minimum)
  */
 void power_sleep(void)
 {
+    // First off, run the scheduled function all the time there is one
+    while (sched_func)
+    {
+        // This enables the scheduled function to set another one if it has to
+        void (*fn)(void) = sched_func;
+        sched_func = 0x0;
+        fn();
+    }
+
     if (systems_em0)
     {
         // Nothing to do, as we've requested full power, although this is odd...
@@ -78,4 +90,15 @@ void power_sleep(void)
         // No subsystems have requested a power mode, sleep!
         EMU_EnterEM3(true);
     }
+}
+
+/**
+ * Schedule a function to run next we try and sleep (like a low-priority
+ * interrupt)
+ *
+ * @param fn Function pointer to execute.
+ */
+void power_schedule(void (*fn)(void))
+{
+    sched_func = fn;
 }

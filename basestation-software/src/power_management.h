@@ -1,5 +1,6 @@
 /**
- * Minimum power mode identification system - header file
+ * Minimum power mode identification system and power and clock management -
+ * header file
  */
 
 #ifndef POWER_MANAGEMENT_H_
@@ -15,5 +16,7 @@ typedef enum {PWR_RADIO, PWR_DELAY} power_system_t;
 void power_set_minimum(power_system_t system, power_min_t minimum);
 
 void power_sleep(void);
+
+void power_schedule(void (*fn)(void));
 
 #endif /* POWER_MANAGEMENT_H_ */

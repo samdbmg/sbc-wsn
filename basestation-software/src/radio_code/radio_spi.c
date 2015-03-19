@@ -190,7 +190,7 @@ void EXTI8_IRQHandler(void)
                 break;
             case RADIO_INT_RXREADY:
                 // Payload data is waiting to be read
-                _radio_payload_ready();
+                power_schedule(_radio_payload_ready);
                 break;
             default:
                 // We're not listening for an interrupt, ignore
