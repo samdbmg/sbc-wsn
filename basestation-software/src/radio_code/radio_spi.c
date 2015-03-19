@@ -16,7 +16,7 @@
 #include "radio_control.h"
 #include "power_management.h"
 
-void EXTI8_IRQHandler(void);
+void EXTI3_IRQHandler(void);
 
 // Type of interrupt currently being waited on
 static volatile uint8_t interrupt_state = RADIO_INT_NONE;
@@ -29,6 +29,7 @@ void radio_spi_init(void)
     // Power up SPI module clocks
     radio_spi_powerstate(true);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
 
     // Set up SPI pins
     GPIO_InitTypeDef gpioInit =
@@ -52,10 +53,15 @@ void radio_spi_init(void)
     GPIO_Init(GPIOA, &gpioInit);
     GPIO_SetBits(GPIOA, GPIO_Pin_4);
 
+    // On a Discovery board SPI1 is connected to the MEMS - set its NSS high
+    gpioInit.GPIO_Pin = GPIO_Pin_3;
+    GPIO_Init(GPIOE, &gpioInit);
+    GPIO_SetBits(GPIOE, GPIO_Pin_3);
+
     // Configure the SPI peripheral itself
     SPI_InitTypeDef spiInit =
     {
-            .SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64,
+            .SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32,
             .SPI_CPHA = SPI_CPHA_1Edge,
             .SPI_CPOL = SPI_CPOL_Low,
             .SPI_CRCPolynomial = 7,
@@ -76,7 +82,7 @@ void radio_spi_init(void)
             .GPIO_Mode = GPIO_Mode_IN,
             .GPIO_Pin = GPIO_Pin_8,
             .GPIO_PuPd = GPIO_PuPd_NOPULL,
-            .GPIO_Speed = GPIO_Speed_2MHz
+            .GPIO_Speed = GPIO_Speed_25MHz
     };
     GPIO_Init(GPIOA, &gpioIntInit);
 
@@ -85,7 +91,7 @@ void radio_spi_init(void)
 
     EXTI_InitTypeDef extiInit =
     {
-            .EXTI_Line = EXTI_Line8,
+            .EXTI_Line = EXTI_Line3,
             .EXTI_LineCmd = ENABLE,
             .EXTI_Mode = EXTI_Mode_Interrupt,
             .EXTI_Trigger = EXTI_Trigger_Rising
@@ -93,11 +99,11 @@ void radio_spi_init(void)
     EXTI_Init(&extiInit);
 
     // Connect EXTI bits
-    SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOA, EXTI_PinSource8);
+    SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOA, EXTI_PinSource3);
 
     // Enable interrupt and set priority
     NVIC_InitTypeDef nvicStructure;
-    nvicStructure.NVIC_IRQChannel = EXTI0_IRQn;
+    nvicStructure.NVIC_IRQChannel = EXTI3_IRQn;
     nvicStructure.NVIC_IRQChannelPreemptionPriority = 0;
     nvicStructure.NVIC_IRQChannelSubPriority = 1;
     nvicStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -111,9 +117,11 @@ void radio_spi_init(void)
  */
 void radio_spi_powerstate(bool state)
 {
-    //RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, (state ? ENABLE : DISABLE));
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, (state ? ENABLE : DISABLE));
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, (state ? ENABLE : DISABLE));
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, (state ? ENABLE : DISABLE));
+
+    // Ensure NSS is asserted (no effect in power down)
+    GPIO_SetBits(GPIOA, 4);
 }
 
 /**
@@ -178,9 +186,12 @@ void radio_spi_prepinterrupt(uint8_t interrupt)
 /**
  * Handle an incoming edge on PA8, the radio interrupt pin
  */
-void EXTI8_IRQHandler(void)
+void EXTI3_IRQHandler(void)
 {
-    if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8))
+    EXTI_ClearITPendingBit(EXTI_Line3);
+
+
+    if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_3))
     {
         switch(interrupt_state)
         {
@@ -196,7 +207,5 @@ void EXTI8_IRQHandler(void)
                 // We're not listening for an interrupt, ignore
                 break;
         }
-
-        EXTI_ClearITPendingBit(EXTI_Line8);
     }
 }

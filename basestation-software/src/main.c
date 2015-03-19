@@ -21,22 +21,21 @@ void got_packet_data(uint16_t bytes);
 
 void got_packet_data(uint16_t bytes)
 {
-    uint8_t data[4] = {0};
+    uint8_t data[5] = {0};
     uint8_t send_data[] = "Hey";
 
     uint16_t bytes_read = radio_retrieve_data(data, 4);
 
-    power_set_minimum(PWR_RADIO, PWR_SLEEP);
+    serial_print("\r\nGot some radio data. Data was: ");
+    serial_print(data);
+    serial_print("\r\n");
 
     if (data[1] == 'H' && data[2] == 'i')
     {
         radio_send_data(send_data, 3, data[0]);
     }
 
-    radio_receive_activate(false);
-    radio_powerstate(false);
-
-    power_set_minimum(PWR_RADIO, PWR_CLOCKSTOP);
+    serial_print("Sent a response \r\n");
 }
 
 /**
@@ -70,6 +69,7 @@ void main(void)
     }
 
     // Set up for receive
+    serial_print("Sending test packet, waiting for RX\r\n");
     radio_powerstate(true);
     radio_send_data("Hi", 2, 0x01);
     radio_receive_activate(true);

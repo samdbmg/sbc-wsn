@@ -40,7 +40,7 @@ void serial_init(void)
     // Configure the USART
     USART_InitTypeDef usartInit =
     {
-            .USART_BaudRate = 38400,
+            .USART_BaudRate = 19200,
             .USART_HardwareFlowControl = USART_HardwareFlowControl_None,
             .USART_Mode = USART_Mode_Rx | USART_Mode_Tx,
             .USART_Parity = USART_Parity_No,
@@ -61,11 +61,16 @@ void serial_print(char* string)
 {
     while(*string)
     {
+        USART_SendData(USART1, (uint16_t)*string++);
+
         while (!(USART1->SR & USART_SR_TXE))
         {
             // Wait for TX buffer to empty
         }
+    }
 
-        USART_SendData(USART1, (uint16_t)*string++);
+    while (!(USART1->SR & USART_SR_TC))
+    {
+        // Wait for TX to end
     }
 }
