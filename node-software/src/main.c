@@ -22,7 +22,7 @@
 
 #define NODE_ADDR 0x01
 
-char radio_test_data[] = "\x01Hi";
+uint8_t radio_test_data[] = "Hi";
 
 void got_packet_data(uint16_t bytes)
 {
@@ -30,9 +30,6 @@ void got_packet_data(uint16_t bytes)
 
     // Read data from ringbuffer
     uint16_t read = radio_retrieve_data(data, 5);
-
-    // Power down radio
-    radio_powerstate(false);
 }
 
 /**
@@ -70,7 +67,7 @@ int main(void)
 
     // Send radio test data
     radio_powerstate(true);
-    radio_send_data(radio_test_data, 3, 0x01);
+    radio_send_data(radio_test_data, 3, 0xFF);
     radio_receive_activate(true);
 
     // Read sensors

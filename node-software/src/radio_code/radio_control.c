@@ -239,6 +239,9 @@ void _radio_payload_ready(void)
 
     radio_spi_select(false);
 
+    // Turn receive back on
+    radio_receive_activate(true);
+
     // Run callback function
     _radio_packet_callback((uint16_t)(payload_size - 1));
 }
@@ -260,6 +263,12 @@ void radio_receive_activate(bool activate)
         radio_spi_prepinterrupt(RADIO_INT_NONE);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE | RADIO_REG_OPMODE_LISTENABORT);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+    }
+
+    // Wait for mode ready
+    while (!(_radio_read_register(RADIO_REG_IRQFLAGS) & RADIO_REG_READYFLAG))
+    {
+
     }
 }
 

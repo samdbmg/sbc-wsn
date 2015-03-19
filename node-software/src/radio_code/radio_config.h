@@ -45,7 +45,7 @@ uint8_t radio_config_data[][2] =
         {0x26, 0x07}, // RegDioMapping2 - Clock out off
         {0x28, 0x10}, // RegIrqFlags2 - Clear FIFO and flags
         {0x29, 220 }, // RegRssiThresh - Threshold for RSSI trigger, -110dBm
-        {0x2E, 0x88}, // RegSyncConfig - Sync on, FIFO on SyncAddress, 2 byte sync word no errors
+        {0x2E, 0x98}, // RegSyncConfig - Sync on, FIFO on SyncAddress, 2 byte sync word no errors
         {0x2F, 0x2D}, // RegSyncValue1 - Set first part of sync word
         {0x30, 0x64}, // RegSyncValue2 - Set second part of sync word
         {0x37, 0x90}, // RegPacketConfig1 - Variable length, DC free off, CRC on, clear off, address off
