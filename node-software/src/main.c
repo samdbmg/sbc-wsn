@@ -19,6 +19,7 @@
 #include "radio_control.h"
 #include "power_management.h"
 #include "i2c_sensors.h"
+#include "rtc_driver.h"
 
 #define NODE_ADDR 0x01
 
@@ -74,6 +75,9 @@ int main(void)
     uint16_t temp_data = sensors_read(SENS_TEMP);
     uint16_t hum_data = sensors_read(SENS_HUMID);
     uint16_t light_data = sensors_read(SENS_LIGHT);
+
+    // Start the RTC (it will be set when the radio protocol kicks in)
+    rtc_init();
 
     // Remain in sleep mode unless woken by interrupt
     while (true)
