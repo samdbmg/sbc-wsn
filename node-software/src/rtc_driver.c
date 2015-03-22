@@ -20,8 +20,8 @@
 #define RTC_OSC_FREQ             (32768)
 #define RTC_OSC_PSC_VAL          (32768)
 #define RTC_TICK_RATE            (RTC_OSC_FREQ / RTC_OSC_PSC_VAL)
-#define RTC_WAKE_INTERVAL        (2000)
-#define RTC_TIMEOUT_INTERVAL     (6000)
+#define RTC_WAKE_INTERVAL        (20)
+#define RTC_TIMEOUT_INTERVAL     (60)
 #define RTC_COUNT_BEFORE_WAKEUP  (RTC_TICK_RATE* RTC_WAKE_INTERVAL)
 #define RTC_COUNT_BEFORE_TIMEOUT (RTC_TICK_RATE * RTC_TIMEOUT_INTERVAL)
 
@@ -48,7 +48,7 @@ void rtc_init(void)
     RTC_CompareSet(0, RTC_COUNT_BEFORE_TIMEOUT);
 
     // Enable RTC interrupts
-    RTC_IntEnable(RTC_IFC_COMP0);
+    RTC_IntEnable(RTC_IFS_COMP0 | RTC_IFC_COMP1);
     NVIC_EnableIRQ(RTC_IRQn);
 
     // Configure, init and start the RTC
@@ -65,6 +65,13 @@ void rtc_init(void)
     power_set_minimum(PWR_RTC, PWR_EM2);
 }
 
+bool rtc_get_time_16(uint16_t* time_p)
+{
+    uint32_t count = RTC_CounterGet();
+    *time_p = count & 0xFFFF;
+    return (0x10000 & count);
+}
+
 /**
  * RTC timeout handler
  */
@@ -79,15 +86,23 @@ void RTC_IRQHandler(void)
         RTC_CompareSet(1, new_compare);
 
         // Send a burst of data back on the radio
-
+        power_schedule(rtc_data_timeout_handler);
 
         // Clear flag for next time
-        RTC_IntClear(RTC_IFC_COMP0);
+        RTC_IntClear(RTC_IFC_COMP1);
     }
     else if (RTC_IntGet() & RTC_IF_COMP0)
     {
         // Daily interrupt fired, just clear the flag
-        RTC_IntClear(RTC_IF_COMP1);
+        RTC_IntClear(RTC_IF_COMP0);
     }
+
+}
+
+/**
+ * Package up some data and send it on the radio
+ */
+void rtc_data_timeout_handler(void)
+{
 
 }
