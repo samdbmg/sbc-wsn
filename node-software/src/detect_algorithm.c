@@ -13,11 +13,13 @@
 #include "em_chip.h"
 #include "em_acmp.h"
 #include "em_gpio.h"
+#include "em_rtc.h"
 
 /* Application-specific headers */
 #include "detect_algorithm.h"
 #include "misc.h"
 #include "power_management.h"
+#include "detect_data_store.h"
 
 /* Functions used only in this file */
 static void _detect_timer_config(void);
@@ -29,8 +31,6 @@ static void _detect_transient_handler(void);
 static uint8_t call_count;
 static uint8_t detect_state;
 static uint8_t transient_count;
-
-uint32_t g_total_calls = 0;
 
 #ifdef DETECT_DEBUG_ON
 uint16_t debug_data_array[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -287,8 +287,7 @@ static void _detect_reset_to_idle(void)
     // Mark a detection if we got enough
     if (call_count >= DETECT_MINCOUNT)
     {
-        //TODO Mark detection
-        g_total_calls++;
+        store_call(false);
     }
 #ifdef DETECT_DEBUG_ON
     else

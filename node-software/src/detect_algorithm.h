@@ -29,6 +29,4 @@
 
 void detect_init(void);
 
-
-
 #endif /* DETECT_ALGORITHM_H_ */
