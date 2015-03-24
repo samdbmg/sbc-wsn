@@ -14,14 +14,17 @@
 #include "em_gpio.h"
 
 /* Application-specific headers */
+#include "main.h"
 #include "misc.h"
 #include "detect_algorithm.h"
 #include "radio_control.h"
 #include "power_management.h"
 #include "i2c_sensors.h"
 #include "rtc_driver.h"
+#include "detect_data_store.h"
 
 #define NODE_ADDR 0x01
+#define BASE_ADDR 0xFF
 
 uint8_t radio_test_data[] = "Hi";
 
@@ -31,6 +34,55 @@ void got_packet_data(uint16_t bytes)
 
     // Read data from ringbuffer
     uint16_t read = radio_retrieve_data(data, 5);
+}
+
+/**
+ * Called every hour (ish) to upload fresh data to the base node
+ */
+void main_rtc_timeout_upload_data(void)
+{
+    // Measure environment
+    store_other(DATA_TEMP, (uint8_t)sensors_read(SENS_TEMP));
+    store_other(DATA_HUMID, (uint8_t)sensors_read(SENS_HUMID));
+    store_other(DATA_LIGHT, (uint8_t)sensors_read(SENS_LIGHT));
+
+    // Compute how many packets need to be sent (bytes in store by bytes in a
+    // packet after overheads)
+    uint8_t packet_count = ((store_get_length() * sizeof(data_struct_t)) /
+            (RADIO_MAX_PACKET_LEN - 2)) + 1;
+
+    uint8_t seq_number = 1;
+    uint8_t data_pointer = 0;
+
+    // Assemble some storage for the packet data array
+    uint8_t packet_data[RADIO_MAX_PACKET_LEN];
+    packet_data[0] = packet_count;
+
+    // Compose and send a string of full packets
+    for (uint8_t i = 0; i < packet_count - 1; i++)
+    {
+        packet_data[1] = seq_number++;
+
+        memcpy(&(packet_data[2]), store_get_pointer() + data_pointer,
+                RADIO_MAX_PACKET_LEN - 2);
+
+        data_pointer += RADIO_MAX_PACKET_LEN - 2;
+
+        radio_send_data(packet_data, RADIO_MAX_PACKET_LEN, BASE_ADDR);
+    }
+
+    // Final packet may be smaller
+    packet_data[1] = seq_number;
+    uint8_t packet_len = (store_get_length() * sizeof(data_struct_t)) -
+            ((seq_number - 1) * (RADIO_MAX_PACKET_LEN - 2));
+
+    memcpy(&(packet_data[2]), store_get_pointer() + data_pointer,
+            packet_len);
+
+    radio_send_data(packet_data, packet_len + 2, BASE_ADDR);
+
+    store_clear();
+
 }
 
 /**
@@ -71,13 +123,9 @@ int main(void)
     radio_send_data(radio_test_data, 3, 0xFF);
     radio_receive_activate(true);
 
-    // Read sensors
-    uint16_t temp_data = sensors_read(SENS_TEMP);
-    uint16_t hum_data = sensors_read(SENS_HUMID);
-    uint16_t light_data = sensors_read(SENS_LIGHT);
-
     // Start the RTC (it will be set when the radio protocol kicks in)
     rtc_init();
+    //main_rtc_timeout_upload_data();
 
     // Remain in sleep mode unless woken by interrupt
     while (true)

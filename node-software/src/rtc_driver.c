@@ -15,12 +15,12 @@
 /* Application-specific headers */
 #include "rtc_driver.h"
 #include "power_management.h"
-#include "misc.h"
+#include "main.h"
 
 #define RTC_OSC_FREQ             (32768)
 #define RTC_OSC_PSC_VAL          (32768)
 #define RTC_TICK_RATE            (RTC_OSC_FREQ / RTC_OSC_PSC_VAL)
-#define RTC_WAKE_INTERVAL        (20)
+#define RTC_WAKE_INTERVAL        (5)
 #define RTC_TIMEOUT_INTERVAL     (60)
 #define RTC_COUNT_BEFORE_WAKEUP  (RTC_TICK_RATE* RTC_WAKE_INTERVAL)
 #define RTC_COUNT_BEFORE_TIMEOUT (RTC_TICK_RATE * RTC_TIMEOUT_INTERVAL)
@@ -56,7 +56,7 @@ void rtc_init(void)
     {
             .enable = true,
             .comp0Top = true,
-            .debugRun = true
+            .debugRun = false
     };
 
     RTC_Init(&rtcInit);
@@ -86,7 +86,7 @@ void RTC_IRQHandler(void)
         RTC_CompareSet(1, new_compare);
 
         // Send a burst of data back on the radio
-        power_schedule(rtc_data_timeout_handler);
+        power_schedule(main_rtc_timeout_upload_data);
 
         // Clear flag for next time
         RTC_IntClear(RTC_IFC_COMP1);
@@ -96,13 +96,5 @@ void RTC_IRQHandler(void)
         // Daily interrupt fired, just clear the flag
         RTC_IntClear(RTC_IF_COMP0);
     }
-
-}
-
-/**
- * Package up some data and send it on the radio
- */
-void rtc_data_timeout_handler(void)
-{
 
 }

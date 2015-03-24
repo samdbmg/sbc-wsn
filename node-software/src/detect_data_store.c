@@ -39,4 +39,33 @@ void store_other(data_type_t data_type, uint8_t otherdata)
     data_array[data_array_index].time = counter;
     data_array[data_array_index].type = data_type;
     data_array[data_array_index].otherdata = otherdata;
+
+    data_array_index++;
+}
+
+/**
+ * Return the number of items in the data store
+ *
+ * @return Number of items
+ */
+uint16_t store_get_length(void)
+{
+    return data_array_index + 1;
+}
+
+/**
+ * Return a pointer to the data array
+ * @return Pointer to data array
+ */
+data_struct_t* store_get_pointer(void)
+{
+    return data_array;
+}
+
+/**
+ * Empty the data store
+ */
+void store_clear(void)
+{
+    data_array_index = 0;
 }
