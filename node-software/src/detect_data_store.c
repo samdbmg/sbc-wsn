@@ -50,7 +50,7 @@ void store_other(data_type_t data_type, uint8_t otherdata)
  */
 uint16_t store_get_length(void)
 {
-    return data_array_index + 1;
+    return data_array_index;
 }
 
 /**

@@ -219,19 +219,16 @@ void _radio_payload_ready(void)
     if (dest_addr == node_addr || dest_addr  == RADIO_BCAST_ADDR)
     {
         // Get data (inc sender ID)
+        // Remove one byte from payload size to omit destination
         for (uint8_t i = 0; i < payload_size - 1; i++)
         {
             uint8_t data = radio_spi_transfer(0x00);
 
-            *(receive_buffer + receive_write_ptr) = data;
+            *(receive_buffer + receive_write_ptr++) = data;
 
             if (receive_write_ptr >= RADIO_RECEIVE_BUFSIZE)
             {
                 receive_write_ptr = 0;
-            }
-            else
-            {
-                receive_write_ptr++;
             }
 
         }

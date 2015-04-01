@@ -73,8 +73,8 @@ void main_rtc_timeout_upload_data(void)
 
     // Final packet may be smaller
     packet_data[1] = seq_number;
-    uint8_t packet_len = (store_get_length() * sizeof(data_struct_t)) -
-            ((seq_number - 1) * (RADIO_MAX_PACKET_LEN - 2));
+    uint8_t packet_len = (store_get_length() * sizeof(data_struct_t));
+    packet_len -= ((seq_number - 1) * (RADIO_MAX_PACKET_LEN - 2));
 
     memcpy(&(packet_data[2]), store_get_pointer() + data_pointer,
             packet_len);
