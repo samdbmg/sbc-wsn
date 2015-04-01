@@ -155,7 +155,7 @@ uint16_t sensors_read(sensor_type_t type)
             bool avalid = false;
             while (!avalid)
             {
-                misc_delay(30);
+                misc_delay(30, true);
 
                 _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE_READ, 1, 3);
 

@@ -21,6 +21,9 @@ static power_system_store_t systems_em2 = 0x0;
 // Scheduled function to run next we sleep
 static void (*sched_func)(void);
 
+// Marker to indicate scheduled function is running, don't recurse
+static volatile bool sched_active = false;
+
 /**
  * Allow a system to indicate the minimum power state it can currently operate
  * at
@@ -64,13 +67,17 @@ void power_set_minimum(power_system_t system, power_min_t minimum)
  */
 void power_sleep(void)
 {
-    // First off, run the scheduled function all the time there is one
-    while (sched_func)
+    // First off, run the scheduled function all the time there is one and doing
+    // so won't cause a recursion
+    while (sched_func && !sched_active)
     {
         // This enables the scheduled function to set another one if it has to
         void (*fn)(void) = sched_func;
         sched_func = 0x0;
+
+        sched_active = true;
         fn();
+        sched_active = false;
     }
 
     if (systems_em0)

@@ -115,9 +115,13 @@ void radio_spi_select(bool select)
  */
 void radio_spi_transmitwait(void)
 {
-    // Sleep until the flag is cleared by the interrupt routine
-    while (interrupt_state != RADIO_INT_NONE)
+    // Set a short timeout to avoid radio-related lockups
+    misc_delay(1000, false);
+
+    // Sleep until the flag is cleared by the interrupt routine or timer runs out
+    while (interrupt_state != RADIO_INT_NONE && misc_delay_active());
     {
+        // A delay will trigger a sleep, but will time out eventually
         power_sleep();
     }
 }
@@ -154,6 +158,12 @@ void GPIO_ODD_IRQHandler(void)
                 break;
         }
 
+
+    }
+
+    // Clear the interrupt, even if it wasn't port B
+    if (GPIO_IntGet() & (0x1 << 11))
+    {
         GPIO_IntClear(0x1 << 11);
     }
 }

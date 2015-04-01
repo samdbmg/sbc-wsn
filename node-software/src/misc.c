@@ -58,9 +58,10 @@ void misc_delay_init(void)
  * Delay execution for a period of time (will drop to sleep and interrupts
  * will not be suppressed)
  *
- * @param ms Time in ms to delay for. Do not exceed 3 seconds
+ * @param ms       Time in ms to delay for. Do not exceed 3 seconds
+ * @param block    Block execution in sleep mode if set to true
  */
-void misc_delay(uint16_t ms)
+void misc_delay(uint16_t ms, bool block)
 {
     // Calculate how many ticks this is
     uint16_t delay_ticks = get_ticks_from_ms(ms, 1024);
@@ -79,17 +80,22 @@ void misc_delay(uint16_t ms)
     TIMER_Enable(TIMER1, true);
 
     // Wait for timeout
-    while (_delay_active)
+    if (block)
     {
-        power_sleep();
+        while (_delay_active)
+        {
+            power_sleep();
+        }
     }
+}
 
-    // Make sure the timer stopped, power it down
-    TIMER_Enable(TIMER1, false);
-    CMU_ClockEnable(cmuClock_TIMER1, false);
-
-    // Remove our requirement to keep the clocks up
-    power_set_minimum(PWR_DELAY, PWR_EM3);
+/**
+ * Check if a delay is currently active (useful in non-blocking mode)
+ * @return True if a delay is active
+ */
+bool misc_delay_active(void)
+{
+    return _delay_active;
 }
 
 /**
@@ -100,4 +106,11 @@ void TIMER1_IRQHandler(void)
     _delay_active = false;
 
     TIMER_IntClear(TIMER1, TIMER_IFC_OF);
+
+    // Make sure the timer stopped, power it down
+    TIMER_Enable(TIMER1, false);
+    CMU_ClockEnable(cmuClock_TIMER1, false);
+
+    // Remove our requirement to keep the clocks up
+    power_set_minimum(PWR_DELAY, PWR_EM3);
 }
