@@ -4,7 +4,6 @@
  */
 
 /* Standard libraries */
-#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -13,6 +12,8 @@
 
 /* Application-specific headers */
 #include "serial_interface.h"
+
+void putchar(char c);
 
 /**
  * Configure USART1 to use as a debug output
@@ -57,20 +58,35 @@ void serial_init(void)
  * Print a string on the serial port
  * @param string A null terminated string
  */
-void serial_print(char* string)
+void serial_print_string(char* string)
 {
     while(*string)
     {
-        USART_SendData(USART1, (uint16_t)*string++);
+        serial_print_char(*string++);
+    }
+}
 
-        while (!(USART1->SR & USART_SR_TXE))
-        {
-            // Wait for TX buffer to empty
-        }
+/**
+ * Print a single character - used by the printf library
+ *
+ * @param c      Character to print
+ */
+void serial_print_char(char c)
+{
+    USART_SendData(USART1, (uint16_t)c);
+
+    while (!(USART1->SR & USART_SR_TXE))
+    {
+        // Wait for TX buffer to empty
     }
 
     while (!(USART1->SR & USART_SR_TC))
     {
         // Wait for TX to end
     }
+}
+
+void putchar(char c)
+{
+    serial_print_char(c);
 }

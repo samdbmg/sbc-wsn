@@ -12,25 +12,13 @@
 #include "radio_control.h"
 #include "power_management.h"
 #include "serial_interface.h"
+#include "printf.h"
 
 #define DEBUG_ENABLE 1
 
 #define NODE_ADDR 0xFF
 
 void got_packet_data(uint16_t bytes);
-void output_byte_as_text(uint8_t byte);
-
-void output_byte_as_text(uint8_t byte)
-{
-    uint8_t print[] = "0xXX";
-    print[2] = (byte & 0xF0) >> 4;
-    print[2] = print[2] <= 9 ? '0' + print[2] : 'A' - 10 + print[2];
-
-    print[3] = byte & 0x0F;
-    print[3] = print[3] <= 9 ? '0' + print[3] : 'A' - 10 + print[3];
-
-    serial_print((char *)print);
-}
 
 void got_packet_data(uint16_t bytes)
 {
@@ -38,24 +26,42 @@ void got_packet_data(uint16_t bytes)
 
     uint16_t bytes_read = radio_retrieve_data(data, 80);
 
-    serial_print("\r\nGot some radio data. Count: ");
-    output_byte_as_text(data[1]);
-    serial_print(" of ");
-    output_byte_as_text(data[2]);
-    serial_print("\r\n");
+    printf("\r\nGot some radio data. Count: %d of %d - %d bytes\r\n", data[1], data[2], bytes_read);
+
+    char bughit[] = "Call";
+    char temp[] = "Temperature";
+    char humid[] = "Humidity";
+    char light[] = "Light Level";
+    char other[] = "Other";
 
     for (uint16_t i = 3; i < bytes_read; i += 4)
     {
-        output_byte_as_text(data[i]);
-        serial_print(", ");
-        output_byte_as_text(data[i + 1]);
-        serial_print(", ");
-        output_byte_as_text(data[i + 2]);
-        serial_print(", ");
-        output_byte_as_text(data[i + 3]);
-        serial_print("\r\n");
+        char* type;
+
+        switch(data[i + 3])
+        {
+            case 0:
+                type = bughit;
+                break;
+            case 1:
+                type = temp;
+                break;
+            case 2:
+                type = humid;
+                break;
+            case 3:
+                type = light;
+                break;
+            default:
+                type = other;
+        }
+
+        uint16_t timestamp = data[i];
+        timestamp |= data[i+1] << 8;
+
+        printf("%d : %s - %d\r\n", timestamp, type, data[i+2]);
     }
-    serial_print("Data done. \r\n");
+    printf("Data done. \r\n");
 }
 
 /**
@@ -72,12 +78,12 @@ void main(void)
 
     // Activate the serial interface
     serial_init();
-    serial_print("\r\n\r\nStarting up..\r\n\r\n");
+    printf("\r\n\r\nStarting up..\r\n\r\n");
 
     // Configure the radio
     if (!radio_init(0xFF, got_packet_data))
     {
-        serial_print("Radio setup failed\r\nLooping.");
+        printf("Radio setup failed\r\nLooping.");
         while (1)
         {
 
@@ -85,16 +91,16 @@ void main(void)
     }
     else
     {
-        serial_print("Radio setup done.\r\n");
+        printf("Radio setup done.\r\n");
     }
 
     // Set up for receive
-    serial_print("Sending test packet, waiting for RX\r\n");
+    printf("Sending test packet, waiting for RX\r\n");
     radio_powerstate(true);
     radio_send_data((uint8_t*)"Hi", 2, 0x01);
     radio_receive_activate(true);
 
-    serial_print("Startup done. Sleeping\r\n");
+    printf("Startup done. Sleeping\r\n");
 
     // Go to sleep. Interrupts will do the rest
     while (1)
