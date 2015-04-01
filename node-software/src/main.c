@@ -28,7 +28,8 @@
 
 #define PKT_TIMESYNC 0x01
 
-uint8_t radio_test_data[] = "Hi";
+/* Functions used only in this file */
+static void clocks_init(void);
 
 void got_packet_data(uint16_t bytes)
 {
@@ -111,13 +112,7 @@ int main(void)
 {
     CHIP_Init();
 
-    CMU_HFRCOBandSet(cmuHFRCOBand_21MHz);
-
-    // Low energy module clock supply
-    CMU_ClockEnable(cmuClock_CORELE, true);
-
-    // GPIO pins clock supply
-    CMU_ClockEnable(cmuClock_GPIO, true);
+    clocks_init();
 
     // Set up the error LED as an output line
     GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
@@ -137,9 +132,8 @@ int main(void)
     // Configure sensors
     sensors_init();
 
-    // Send radio test data
+    // Prep radio for receive
     radio_powerstate(true);
-    radio_send_data(radio_test_data, 3, 0xFF);
     radio_receive_activate(true);
 
     // Start the RTC (it will be set when the radio protocol kicks in)
@@ -151,5 +145,24 @@ int main(void)
     {
         power_sleep();
     }
+}
+
+static void clocks_init(void)
+{
+    CMU_HFRCOBandSet(cmuHFRCOBand_21MHz);
+
+    // Low energy module clock supply
+    CMU_ClockEnable(cmuClock_CORELE, true);
+
+    // Start the LFRCO (Low Freq RC Oscillator) and wait for it to stabilise
+    // The ULFRCO uses less power, but is much less accurate!
+    CMU_OscillatorEnable(cmuOsc_LFRCO, true, true);
+
+    // Assign the LFRCO to LF clock A and B domains (RTC, LEUART)
+    CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFRCO);
+    CMU_ClockSelectSet(cmuClock_LFB, cmuSelect_LFRCO);
+
+    // GPIO pins clock supply
+    CMU_ClockEnable(cmuClock_GPIO, true);
 }
 

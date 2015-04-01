@@ -30,12 +30,7 @@
  */
 void rtc_init(void)
 {
-    // Start the LFRCO (Low Freq RC Oscillator) and wait for it to stabilise
-    // The ULFRCO uses less power, but is much less accurate!
-    CMU_OscillatorEnable(cmuOsc_LFRCO, true, true);
-
-    // Set it as the RTC clock source and enable the RTC
-    CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFRCO);
+    // Enable RTC clock
     CMU_ClockEnable(cmuClock_RTC, true);
 
     // Set RTC prescaler
