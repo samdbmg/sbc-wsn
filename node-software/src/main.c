@@ -26,14 +26,33 @@
 #define NODE_ADDR 0x01
 #define BASE_ADDR 0xFF
 
+#define PKT_TIMESYNC 0x01
+
 uint8_t radio_test_data[] = "Hi";
 
 void got_packet_data(uint16_t bytes)
 {
-    uint8_t data[5] = {0};
+    uint8_t data[20];
 
     // Read data from ringbuffer
-    uint16_t read = radio_retrieve_data(data, 5);
+    uint16_t read_bytes = radio_retrieve_data(data, sizeof(data));
+
+    // Process the packet based on a type header
+    switch (data[1])
+    {
+        case PKT_TIMESYNC:
+        {
+            // Next two bytes are an RTC update, update the RTC
+            uint16_t timestamp = data[2];
+            timestamp |= data[3] << 8;
+
+            rtc_set_time(timestamp);
+            break;
+        }
+        default:
+            // Ignore an unknown packet
+            break;
+    }
 }
 
 /**

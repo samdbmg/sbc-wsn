@@ -97,7 +97,8 @@ void main(void)
     // Set up for receive
     printf("Sending test packet, waiting for RX\r\n");
     radio_powerstate(true);
-    radio_send_data((uint8_t*)"Hi", 2, 0x01);
+    uint8_t radio_clock_set_test[] = {0x01, 0x20, 0x00};
+    radio_send_data(radio_clock_set_test, sizeof(radio_clock_set_test), 0x01);
     radio_receive_activate(true);
 
     printf("Startup done. Sleeping\r\n");

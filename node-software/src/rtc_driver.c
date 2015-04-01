@@ -73,6 +73,22 @@ bool rtc_get_time_16(uint16_t* time_p)
 }
 
 /**
+ * Set the current real time clock value in seconds
+ * @param timestamp Current time from upstream
+ */
+void rtc_set_time(uint16_t timestamp)
+{
+    RTC_Enable(false);
+    RTC->CNT = (uint32_t) timestamp;
+    RTC_Enable(true);
+
+    // Calculate the next interrupt (and adjust for crossing midnight)
+    uint32_t new_compare = RTC_CounterGet() + RTC_COUNT_BEFORE_WAKEUP;
+    new_compare %= RTC_COUNT_BEFORE_TIMEOUT;
+    RTC_CompareSet(1, new_compare);
+}
+
+/**
  * RTC timeout handler
  */
 void RTC_IRQHandler(void)
@@ -80,7 +96,7 @@ void RTC_IRQHandler(void)
     if (RTC_IntGet() & RTC_IF_COMP1)
     {
         // Hourly interrupt fired, calculate the next hour interrupt (and adjust
-        // for crossing midnight with a mod
+        // for crossing midnight with a mod)
         uint32_t new_compare = RTC_CompareGet(1) + RTC_COUNT_BEFORE_WAKEUP;
         new_compare %= RTC_COUNT_BEFORE_TIMEOUT;
         RTC_CompareSet(1, new_compare);
