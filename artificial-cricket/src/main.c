@@ -14,6 +14,7 @@
 #include "timer_config.h"
 #include "random_adjust.h"
 #include "user_switch.h"
+#include "serial_interface.h"
 
 // Set this to zero to disable random adjust
 #define RANDOM_ENABLE 1
@@ -27,6 +28,9 @@
 // Generate a female response after this many (set to zero to disable)
 #define FEMALE_RESPONSE_PERIOD 10
 #define FEMALE_RESPONSE_DELAY_MS 25
+
+// Set to zero to disable serial data output
+#define SERIAL_OUT 1
 
 // Do we want to be able to debug the CPU with the ST-Link?
 #define DEBUG_ENABLE 1
@@ -44,6 +48,7 @@ static void generate_call(void);
 // Counter for number of clicks to generate each time, and number so far
 static uint8_t g_clicks_total = INITIAL_CLICK_COUNT;
 static volatile uint8_t g_clicks_progress;
+static uint8_t g_calls_sent = 0;
 
 // Initial call timer value
 static const uint32_t g_initial_call_timer = 1000;
@@ -163,6 +168,8 @@ static void generate_call(void)
         else
         {
             g_female_wait--;
+
+            g_calls_sent++;
         }
     }
 
@@ -184,6 +191,10 @@ static void generate_call(void)
                 (int32_t)TIM4->CCR1, MARKSPACE_COMPARE_VALUE);
 
     }
+
+#if SERIAL_OUT
+    serial_print_char((char)g_calls_sent);
+#endif
 }
 
 /**
@@ -220,6 +231,10 @@ void main(void)
     // Configure the assorted timers
     pwm_timer_setup();
     markspace_timer_setup();
+
+#if SERIAL_OUT
+    serial_init();
+#endif
 
 #if CALL_TIMER_ENABLE
     call_timer_setup(g_initial_call_timer, FEMALE_RESPONSE_DELAY_MS);
