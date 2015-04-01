@@ -34,8 +34,9 @@ typedef struct
 void store_call(bool female);
 void store_other(data_type_t data_type, uint8_t data);
 
-uint16_t store_get_length(void);
-data_struct_t* store_get_pointer(void);
-void store_clear(void);
+uint16_t store_get_size(void);
+uint16_t store_get_write_position(void);
+void store_get_data(uint8_t *data_p, uint16_t length, uint16_t skip);
+void store_clear(uint16_t write_position);
 
 #endif /* DETECT_DATA_STORE_H_ */

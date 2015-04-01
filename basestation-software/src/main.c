@@ -18,51 +18,48 @@
 
 #define NODE_ADDR 0xFF
 
+#define DATA_ARRAY_SIZE 512
+
+static uint8_t incoming_data_array[DATA_ARRAY_SIZE];
+static uint16_t incoming_data_pointer = 0;
+static uint8_t last_seq_number = 0;
+static uint8_t seq_to_repeat[20] = {0};
+static uint8_t repeat_index = 0;
+
+
 void got_packet_data(uint16_t bytes);
+void got_complete_packet(void);
 
 void got_packet_data(uint16_t bytes)
 {
-    uint8_t data[80];
+    // Reset the timeout since we got a new packet
+    // TODO
 
-    uint16_t bytes_read = radio_retrieve_data(data, 80);
+    // Read in enough data to get sequence numbers
+    uint8_t seq_data[3];
+    uint16_t bytes_read = radio_retrieve_data(seq_data, 3);
 
-    printf("\r\nGot some radio data. Count: %d of %d - %d bytes\r\n", data[1], data[2], bytes_read);
+    printf("\r\nGot some radio data. Count: %d of %d - %d bytes\r\n", seq_data[1], seq_data[2], bytes);
 
-    char bughit[] = "Call";
-    char temp[] = "Temperature";
-    char humid[] = "Humidity";
-    char light[] = "Light Level";
-    char other[] = "Other";
+    // Read rest of data in at correct location
+    bytes_read = radio_retrieve_data((incoming_data_array + seq_data[1] * RADIO_MAX_PACKET_LEN), RADIO_MAX_PACKET_LEN);
+    incoming_data_pointer += bytes_read;
 
-    for (uint16_t i = 3; i < bytes_read; i += 4)
+    if (seq_data[1] != last_seq_number++)
     {
-        char* type;
-
-        switch(data[i + 2] & 0x7F)
-        {
-            case 0:
-                type = bughit;
-                break;
-            case 1:
-                type = temp;
-                break;
-            case 2:
-                type = humid;
-                break;
-            case 3:
-                type = light;
-                break;
-            default:
-                type = other;
-        }
-
-        uint32_t timestamp = data[i];
-        timestamp |= data[i+1] << 8;
-        timestamp |= (data[i+2] & 0x80) << 9;
-
-        printf("%d : %s - %d\r\n", timestamp, type, data[i+3]);
+        seq_to_repeat[repeat_index++] = last_seq_number;
     }
-    printf("Data done. \r\n");
+
+    if (seq_data[1] == seq_data[2])
+    {
+        // Handle a complete packet
+        got_complete_packet();
+    }
+}
+
+void got_complete_packet(void)
+{
+
 }
 
 /**
