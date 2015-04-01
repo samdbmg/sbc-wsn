@@ -33,8 +33,8 @@ void store_other(data_type_t data_type, uint8_t otherdata)
     uint16_t counter;
     bool flag = rtc_get_time_16(&counter);
 
-    otherdata &= 0x7F;
-    otherdata |= flag ? DATA_FLG_PM : 0x0;
+    data_type &= 0x7F;
+    data_type |= flag ? 0x80 : 0x0;
 
     data_array[data_array_index].time = counter;
     data_array[data_array_index].type = data_type;

@@ -15,17 +15,20 @@ typedef enum
     DATA_OTHER = 4
 } data_type_t;
 
+/*
+ * Data storage type. Note that 17 bits are required to store a timestamp as
+ * an offset from midnight in seconds, so the MSB of type is used as well
+ */
 typedef struct
 {
     uint16_t time;
-    uint8_t otherdata;
     uint8_t type;
+    uint8_t otherdata;
 } data_struct_t;
 
 #define DATA_ARRAY_SIZE 512
 
 // Detect flags
-#define DATA_FLG_PM  (1 << 0) // MSB of time
 #define DATA_FLG_FEM (1 << 1) // Marks a probable female call was heard
 
 void store_call(bool female);

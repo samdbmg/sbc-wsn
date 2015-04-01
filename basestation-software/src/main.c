@@ -38,7 +38,7 @@ void got_packet_data(uint16_t bytes)
     {
         char* type;
 
-        switch(data[i + 3])
+        switch(data[i + 2] & 0x7F)
         {
             case 0:
                 type = bughit;
@@ -56,10 +56,11 @@ void got_packet_data(uint16_t bytes)
                 type = other;
         }
 
-        uint16_t timestamp = data[i];
+        uint32_t timestamp = data[i];
         timestamp |= data[i+1] << 8;
+        timestamp |= (data[i+2] & 0x80) << 9;
 
-        printf("%d : %s - %d\r\n", timestamp, type, data[i+2]);
+        printf("%d : %s - %d\r\n", timestamp, type, data[i+3]);
     }
     printf("Data done. \r\n");
 }
