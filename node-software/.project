@@ -71,6 +71,11 @@
 			<location>C:/SiliconLabs/SimplicityStudio/v2/developer/sdks/efm32/v2/emlib/src/em_int.c</location>
 		</link>
 		<link>
+			<name>emlib/em_leuart.c</name>
+			<type>1</type>
+			<location>C:/SiliconLabs/SimplicityStudio/v2/developer/sdks/efm32/v2/emlib/src/em_leuart.c</location>
+		</link>
+		<link>
 			<name>emlib/em_pcnt.c</name>
 			<type>1</type>
 			<location>C:/SiliconLabs/SimplicityStudio/v2/developer/sdks/efm32/v2/emlib/src/em_pcnt.c</location>

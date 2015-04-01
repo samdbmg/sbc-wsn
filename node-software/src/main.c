@@ -22,6 +22,7 @@
 #include "i2c_sensors.h"
 #include "rtc_driver.h"
 #include "detect_data_store.h"
+#include "ext_sensor.h"
 
 #define NODE_ADDR 0x01
 #define BASE_ADDR 0xFF
@@ -131,6 +132,9 @@ int main(void)
 
     // Configure sensors
     sensors_init();
+
+    // Configure external sensor interface
+    ext_init();
 
     // Prep radio for receive
     radio_powerstate(true);
