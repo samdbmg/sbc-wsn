@@ -58,7 +58,7 @@ void misc_delay_init(void)
  * Delay execution for a period of time (will drop to sleep and interrupts
  * will not be suppressed)
  *
- * @param ms       Time in ms to delay for. Do not exceed 3 seconds
+ * @param ms       Time in ms to delay for. Do not exceed 3.19 seconds
  * @param block    Block execution in sleep mode if set to true
  */
 void misc_delay(uint16_t ms, bool block)
