@@ -3,7 +3,7 @@
  * This code exposes functions for radio_control.c to use with the EFM32 MCU
  */
 
-// Standard libraries
+/* Standard libraries */
 #include <stdint.h>
 #include <stdbool.h>
 

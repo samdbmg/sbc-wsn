@@ -19,6 +19,8 @@
 
 #define RADIO_BCAST_ADDR      0x00
 
+typedef enum {RADIO_SLEEP, RADIO_WAKE, RADIO_LISTEN} radio_state_t;
+
 bool radio_init(uint8_t addr, void (*callback)(uint16_t));
 
 // Internal functions for sending and receiving data - exposed for convienience

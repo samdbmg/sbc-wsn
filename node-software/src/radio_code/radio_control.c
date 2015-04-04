@@ -25,6 +25,9 @@ static uint16_t receive_write_ptr = 0;
 // Callback to run when receiving a new packet
 void (*_radio_packet_callback)(uint16_t) = 0x0;
 
+// Flag to indicate current radio state
+static radio_state_t _radio_state = RADIO_SLEEP;
+
 /* Functions used only in this file */
 static void _radio_write_register(uint8_t address, uint8_t data);
 static uint8_t _radio_read_register(uint8_t address);
@@ -97,7 +100,7 @@ bool radio_send_data(uint8_t* data_p, uint16_t length, uint8_t dest_addr)
     }
 
     // Find out if we're receiving to reset when done
-    bool recv_active = _radio_read_register(RADIO_REG_OPMODE) & 0x40;
+    bool recv_active = (_radio_state == RADIO_LISTEN);
 
     // Kill receiver to prevent recv during send
     radio_receive_activate(false);
@@ -190,6 +193,9 @@ void _radio_payload_ready(void)
 {
     radio_spi_select(true);
 
+    // Address validation success flag
+    bool packet_accepted = false;
+
     // Activate read mode (this way gives sequential reads)
     radio_spi_transfer(0x00);
 
@@ -206,18 +212,14 @@ void _radio_payload_ready(void)
         space_left = (uint16_t)(RADIO_RECEIVE_BUFSIZE - receive_write_ptr + receive_read_ptr - 1);
     }
 
-    if (payload_size - 1 > space_left)
-    {
-        // Drop the packet
-        radio_spi_select(false);
-        return;
-    }
-
     // Try and grab an address
     uint8_t dest_addr = radio_spi_transfer(0x00);
 
-    if (dest_addr == node_addr || dest_addr  == RADIO_BCAST_ADDR)
+    if ((dest_addr == node_addr || dest_addr == RADIO_BCAST_ADDR) &&
+            (payload_size - 1 <= space_left))
     {
+        packet_accepted = true;
+
         // Get data (inc sender ID)
         // Remove one byte from payload size to omit destination
         for (uint8_t i = 0; i < payload_size - 1; i++)
@@ -233,14 +235,21 @@ void _radio_payload_ready(void)
 
         }
     }
+    else
+    {
+        packet_accepted = false;
+    }
 
     radio_spi_select(false);
 
     // Turn receive back on
     radio_receive_activate(true);
 
-    // Run callback function
-    _radio_packet_callback((uint16_t)(payload_size - 1));
+    // Run callback function if packet valid
+    if (packet_accepted)
+    {
+        _radio_packet_callback((uint16_t)(payload_size - 1));
+    }
 }
 
 /**
@@ -254,12 +263,14 @@ void radio_receive_activate(bool activate)
     {
         radio_spi_prepinterrupt(RADIO_INT_RXREADY);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_RX);
+        _radio_state = RADIO_LISTEN;
     }
     else
     {
         radio_spi_prepinterrupt(RADIO_INT_NONE);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE | RADIO_REG_OPMODE_LISTENABORT);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
+        _radio_state = RADIO_WAKE;
     }
 
     // Wait for mode ready
@@ -325,6 +336,8 @@ void radio_powerstate(bool state)
             // Wait for radio to wake
             ret = _radio_read_register(RADIO_REG_IRQFLAGS);
         }
+
+        _radio_state = RADIO_WAKE;
     }
     else
     {
@@ -343,6 +356,8 @@ void radio_powerstate(bool state)
         }
 
         radio_spi_powerstate(false);
+
+        _radio_state = RADIO_SLEEP;
     }
 }
 

@@ -5,7 +5,7 @@
 /* Standard libraries */
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <string.h>
 
 /* Application-specific headers */
 #include "detect_data_store.h"

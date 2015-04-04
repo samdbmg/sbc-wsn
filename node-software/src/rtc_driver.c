@@ -15,7 +15,7 @@
 /* Application-specific headers */
 #include "rtc_driver.h"
 #include "power_management.h"
-#include "main.h"
+#include "radio_protocol.h"
 
 #define RTC_OSC_FREQ             (32768)
 #define RTC_OSC_PSC_VAL          (32768)
@@ -97,7 +97,7 @@ void RTC_IRQHandler(void)
         RTC_CompareSet(1, new_compare);
 
         // Send a burst of data back on the radio
-        power_schedule(main_rtc_timeout_upload_data);
+        proto_triggerupload();
 
         // Clear flag for next time
         RTC_IntClear(RTC_IFC_COMP1);

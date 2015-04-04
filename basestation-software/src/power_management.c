@@ -56,44 +56,48 @@ void power_set_minimum(power_system_t system, power_min_t minimum)
  */
 void power_sleep(void)
 {
-    // First off, run the scheduled function all the time there is one
-    while (sched_func)
+    // If there's a scheduled function, run it and return (sleep will be
+    // called in a loop)
+    if (sched_func)
     {
         // This enables the scheduled function to set another one if it has to
         void (*fn)(void) = sched_func;
         sched_func = 0x0;
         fn();
     }
-
-    if (systems_wake)
-    {
-        // Nothing to do, as we've requested full power, although this is odd...
-    }
-    else if (systems_sleep)
-    {
-        // Drop to sleep and wait for interrupt
-        __WFI();
-    }
     else
     {
-        // No subsystems have requested a power mode, go to stop mode
-        PWR_EnterSTOPMode(PWR_LowPowerRegulator_ON, PWR_STOPEntry_WFI);
-
-        // Restart the HSE and wait for startup
-        RCC_HSEConfig(RCC_HSE_ON);
-        RCC_WaitForHSEStartUp();
-
-        // Restart the PLL and wait for startup
-        RCC_PLLCmd(ENABLE);
-        while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET)
+        // Nothing scheduled, sleep
+        if (systems_wake)
         {
-
+            // Nothing to do, as we've requested full power, although this is odd...
         }
+        else if (systems_sleep)
+        {
+            // Drop to sleep and wait for interrupt
+            __WFI();
+        }
+        else
+        {
+            // No subsystems have requested a power mode, go to stop mode
+            PWR_EnterSTOPMode(PWR_LowPowerRegulator_ON, PWR_STOPEntry_WFI);
 
-        RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+            // Restart the HSE and wait for startup
+            RCC_HSEConfig(RCC_HSE_ON);
+            RCC_WaitForHSEStartUp();
 
-        // Stop the HSI
-        RCC_HSICmd(DISABLE);
+            // Restart the PLL and wait for startup
+            RCC_PLLCmd(ENABLE);
+            while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET)
+            {
+
+            }
+
+            RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+
+            // Stop the HSI
+            RCC_HSICmd(DISABLE);
+        }
     }
 }
 
