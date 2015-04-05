@@ -10,6 +10,8 @@
 #define PKT_REPEAT   0x02
 #define PKT_ACK      0x03
 
+#define RADIO_MAX_DATA_LEN 60
+
 /**
  * Types of data we can pick up
  */

@@ -85,19 +85,20 @@ void proto_incoming_packet(uint16_t bytes)
             if (data[2] == data[3])
             {
                 // Last packet was missed, send a short one
-                packet_len = store_get_size() -
-                        ((RADIO_MAX_PACKET_LEN - 2)/sizeof(data_struct_t)) * data[3];
+                packet_len = store_get_size() - RADIO_MAX_DATA_LEN * (data[3] - 1);
             }
             else
             {
-                packet_len = (RADIO_MAX_PACKET_LEN - 2)/sizeof(data_struct_t);
+                packet_len = RADIO_MAX_DATA_LEN;
             }
 
             store_get_data(&(packet_data[2]), packet_len,
-                    ((RADIO_MAX_PACKET_LEN - 2)/sizeof(data_struct_t)) * data[3]);
+                    RADIO_MAX_DATA_LEN * (data[3] - 1));
 
-            radio_send_data(packet_data,
-                    (packet_len * sizeof(data_struct_t)) + 2, BASE_ADDR);
+            // Brief delay to allow far end to flip back to receive
+            misc_delay(200, true);
+
+            radio_send_data(packet_data, packet_len, BASE_ADDR);
 
             break;
         }
@@ -198,8 +199,7 @@ static void _proto_uploaddata(void)
 
     // Compute how many packets need to be sent (bytes in store by bytes in a
     // packet after overheads)
-    uint8_t packet_count = ((store_get_size() * sizeof(data_struct_t)) /
-            (RADIO_MAX_PACKET_LEN - 2)) + 1;
+    uint8_t packet_count = (store_get_size() / RADIO_MAX_DATA_LEN) + 1;
 
     datastore_end = store_get_write_position();
     uint8_t seq_number = 1;
@@ -215,21 +215,19 @@ static void _proto_uploaddata(void)
     {
         packet_data[1] = seq_number++;
 
-        store_get_data(&(packet_data[2]),
-                (RADIO_MAX_PACKET_LEN - 2)/sizeof(data_struct_t), data_pointer);
+        store_get_data(&(packet_data[2]), RADIO_MAX_DATA_LEN, data_pointer);
 
-        radio_send_data(packet_data, RADIO_MAX_PACKET_LEN, BASE_ADDR);
+        radio_send_data(packet_data, RADIO_MAX_DATA_LEN + 2, BASE_ADDR);
 
-        data_pointer += RADIO_MAX_PACKET_LEN;
+        data_pointer += RADIO_MAX_DATA_LEN;
     }
 
     // Final packet may be smaller
     packet_data[1] = seq_number;
     uint8_t packet_len = store_get_size();
-    packet_len -= ((seq_number - 1) * ((RADIO_MAX_PACKET_LEN - 2)/sizeof(data_struct_t)));
+    packet_len -= (seq_number - 1) * RADIO_MAX_DATA_LEN;
 
     store_get_data(&(packet_data[2]), packet_len, data_pointer);
 
-    radio_send_data(packet_data,
-            (packet_len * sizeof(data_struct_t)) + 2, BASE_ADDR);
+    radio_send_data(packet_data, packet_len + 2, BASE_ADDR);
 }
