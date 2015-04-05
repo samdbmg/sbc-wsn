@@ -69,11 +69,12 @@ uint16_t store_get_size(void)
 {
     if (data_write_index >= data_read_index)
     {
-        return data_write_index - data_read_index;
+        return (data_write_index - data_read_index) * sizeof(data_struct_t);
     }
     else
     {
-        return DATA_ARRAY_SIZE - (data_read_index - data_write_index);
+        return (DATA_ARRAY_SIZE - (data_read_index - data_write_index)) *
+                sizeof(data_struct_t);
     }
 }
 
@@ -91,14 +92,16 @@ uint16_t store_get_write_position(void)
  * Retrieve a block of data from the data store
  *
  * @param data_p Pointer to write the data into
- * @param length Number of items to retrieve, must be at least number available
- * @param skip   Number of items to skip ahead by
+ * @param length Number of bytes to retrieve, must be at least number available
+ * @param skip   Number of bytes to skip ahead by
  */
 void store_get_data(uint8_t *data_p, uint16_t length, uint16_t skip)
 {
-    uint16_t index = data_read_index + skip;
+    int16_t internal_len = length;
 
-    while (length > 0)
+    uint16_t index = data_read_index + (skip / sizeof(data_struct_t));
+
+    while (internal_len > 0)
     {
         memcpy(data_p, (data_array + index++), sizeof(data_struct_t));
         data_p += sizeof(data_struct_t);
@@ -107,7 +110,7 @@ void store_get_data(uint8_t *data_p, uint16_t length, uint16_t skip)
         {
             index = 0;
         }
-        length--;
+        internal_len -= sizeof(data_struct_t);
     }
 }
 
