@@ -14,6 +14,7 @@
 #include "radio_control.h"
 #include "radio_shared_types.h"
 #include "printf.h"
+#include "power_management.h"
 
 // Set this to zero to keep the radio on all the time
 #define RADIO_SLEEP_IDLE 0
@@ -21,14 +22,15 @@
 #define PROTO_ARRAY_SIZE 512
 
 // Time to wait for next packet
-#define PROTO_TIMEOUT_MS 1000
+#define PROTO_TIMEOUT_MS 750
+
 // TIme to wait for first packet
 #define PROTO_INITIAL_TIMEOUT_MS 10000
 
 #define MAX_REPEAT 20
 
 // Protocol state store
-static proto_radio_state_t proto_state = PROTO_IDLE;
+proto_radio_state_t proto_state = PROTO_IDLE;
 
 // Packet handling data storage
 static uint8_t incoming_data_array[PROTO_ARRAY_SIZE];
@@ -52,7 +54,7 @@ void proto_init(void)
     // Timer base configuration (TIM2, 32 bit GP timer)
     TIM_TimeBaseInitTypeDef timer_init;
     timer_init.TIM_ClockDivision = TIM_CKD_DIV1;
-    timer_init.TIM_Prescaler = 16000;
+    timer_init.TIM_Prescaler = 8000;
     timer_init.TIM_Period = 1000;
     timer_init.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &timer_init);
@@ -86,9 +88,11 @@ void proto_incoming_packet(uint16_t bytes)
     TIM_SetCounter(TIM2, 0);
 
     // Set flag that receive started
-    if (proto_state == PROTO_AWAKE)
+    if (proto_state == PROTO_AWAKE || proto_state == PROTO_IDLE ||
+            proto_state == PROTO_RECV)
     {
         TIM_SetAutoreload(TIM2, PROTO_TIMEOUT_MS);
+        TIM_Cmd(TIM2, ENABLE);
         proto_state = PROTO_RECV;
     }
 
@@ -96,25 +100,39 @@ void proto_incoming_packet(uint16_t bytes)
     uint8_t seq_data[3];
     uint16_t bytes_read = radio_retrieve_data(seq_data, 3);
 
-    seq_size = seq_data[2];
     source_node = seq_data[0];
+    seq_size = seq_data[1];
+    uint8_t seq_number = seq_data[2];
 
-    printf("\r\nGot some radio data. Count: %d of %d - %d bytes\r\n", seq_data[1], seq_data[2], bytes);
+    printf("\r\nGot some radio data. Count: %d of %d - %d bytes\r\n",
+            seq_number, seq_size, bytes);
 
     // Read rest of data in at correct location
-    bytes_read = radio_retrieve_data((incoming_data_array + (seq_data[1] - 1) * RADIO_MAX_PACKET_LEN),
-            RADIO_MAX_PACKET_LEN);
+    bytes_read = radio_retrieve_data(
+            (incoming_data_array + (seq_number - 1) * RADIO_MAX_DATA_LEN),
+            RADIO_MAX_DATA_LEN);
+
     incoming_data_pointer += bytes_read;
 
-    while (seq_data[1] > ++last_seq_number && repeat_index < MAX_REPEAT)
+    if (proto_state == PROTO_REPEATING)
     {
-        seq_to_repeat[repeat_index++] = last_seq_number;
-    }
-
-    if (seq_data[1] == seq_data[2])
-    {
-        // Handle a complete packet by setting state
         proto_state = PROTO_ARQ;
+        printf("Was a repeat\r\n");
+    }
+    else
+    {
+        while (seq_number > ++last_seq_number && repeat_index < MAX_REPEAT)
+        {
+            seq_to_repeat[repeat_index++] = last_seq_number;
+        }
+
+        if (seq_number == seq_size)
+        {
+            // Handle a complete packet by setting state
+            proto_state = PROTO_ARQ;
+
+            TIM_Cmd(TIM2, DISABLE);
+        }
     }
 
 }
@@ -138,6 +156,8 @@ void proto_start_rec(void)
     // Radio on and listening
     radio_powerstate(true);
     radio_receive_activate(true);
+
+    power_set_minimum(PWR_RADIO, PWR_SLEEP);
 }
 
 /**
@@ -159,8 +179,14 @@ void proto_run(void)
                 // Set seq number to repeat
                 packet_data[2] = seq_to_repeat[repeat_index];
 
+                printf("Requesting repeat of packet %d\r\n",
+                        seq_to_repeat[repeat_index]);
+
                 // Send repeat request
                 radio_send_data(packet_data, 3, source_node);
+
+                // Reset state
+                proto_state = PROTO_REPEATING;
 
                 // Repeat will be received by incoming_packet() and then this
                 // will rerun
@@ -174,11 +200,12 @@ void proto_run(void)
 
                 // Cut radio and timer power
                 TIM_Cmd(TIM2, DISABLE);
-                RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
                 proto_state = PROTO_IDLE;
 
 #if RADIO_SLEEP_IDLE
                 radio_powerstate(false);
+                RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
+                power_set_minimum(PWR_RADIO, PWR_CLOCKSTOP);
 #endif
 
                 // Save the packet
@@ -239,8 +266,6 @@ void proto_run(void)
  */
 void TIM2_IRQHandler(void)
 {
-    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-
     switch (proto_state)
     {
         case PROTO_AWAKE:
@@ -252,11 +277,12 @@ void TIM2_IRQHandler(void)
             proto_state = PROTO_IDLE;
 
             TIM_Cmd(TIM2, DISABLE);
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
 
             // Radio off
 #if RADIO_SLEEP_IDLE
             radio_powerstate(false);
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
+            power_set_minimum(PWR_RADIO, PWR_CLOCKSTOP);
 #endif
 
             break;
@@ -264,25 +290,29 @@ void TIM2_IRQHandler(void)
         case PROTO_RECV:
         {
             // Looks like the last packets were dropped! Mark for repeat
-            while (last_seq_number + 1 != seq_size)
+            while (++last_seq_number <= seq_size)
             {
                 seq_to_repeat[repeat_index++] = last_seq_number;
             }
 
             proto_state = PROTO_ARQ;
+
+            TIM_Cmd(TIM2, DISABLE);
+
             break;
         }
         case PROTO_ARQ:
         {
             // Well that's gone well. Call the whole thing off?
-#if RADIO_SLEEP_IDLE
-            radio_powerstate(false);
-#endif
-
             proto_state = PROTO_IDLE;
 
             TIM_Cmd(TIM2, DISABLE);
+
+#if RADIO_SLEEP_IDLE
+            radio_powerstate(false);
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
+            power_set_minimum(PWR_RADIO, PWR_CLOCKSTOP);
+#endif
 
             break;
         }
@@ -290,4 +320,6 @@ void TIM2_IRQHandler(void)
             // Do nothing
             break;
     }
+
+    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 }

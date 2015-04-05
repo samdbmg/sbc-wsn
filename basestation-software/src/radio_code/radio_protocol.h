@@ -5,7 +5,7 @@
 #ifndef RADIO_CODE_RADIO_PROTOCOL_H_
 #define RADIO_CODE_RADIO_PROTOCOL_H_
 
-typedef enum {PROTO_IDLE, PROTO_AWAKE, PROTO_RECV, PROTO_ARQ} proto_radio_state_t;
+typedef enum {PROTO_IDLE, PROTO_AWAKE, PROTO_RECV, PROTO_ARQ, PROTO_REPEATING} proto_radio_state_t;
 
 void proto_init(void);
 void proto_incoming_packet(uint16_t bytes);
