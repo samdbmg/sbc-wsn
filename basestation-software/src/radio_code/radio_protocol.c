@@ -16,6 +16,8 @@
 #include "printf.h"
 #include "power_management.h"
 
+#include "tm_stm32f4_fatfs.h"
+
 // Set this to zero to keep the radio on all the time
 #define RADIO_SLEEP_IDLE 0
 
@@ -41,7 +43,9 @@ static uint8_t seq_to_repeat[MAX_REPEAT] = {0};
 static uint8_t repeat_index = 0;
 static uint8_t source_node;
 
+// Functions used only in this file
 void TIM2_IRQHandler(void);
+static void proto_savedata(void);
 
 /**
  * Configure the timer used elsewhere in the protocol
@@ -188,6 +192,10 @@ void proto_run(void)
                 // Reset state
                 proto_state = PROTO_REPEATING;
 
+                // Reset timer
+                TIM_SetAutoreload(TIM2, PROTO_TIMEOUT_MS);
+                TIM_Cmd(TIM2, ENABLE);
+
                 // Repeat will be received by incoming_packet() and then this
                 // will rerun
             }
@@ -245,10 +253,14 @@ void proto_run(void)
                 }
                 printf("Data done. \r\n");
 
+                proto_savedata();
+
                 // Reset some stuff
                 incoming_data_pointer = 0;
                 last_seq_number = 0;
                 repeat_index = 0;
+
+
             }
 
             break;
@@ -262,6 +274,55 @@ void proto_run(void)
 }
 
 /**
+ * Save received data to the SD card
+ */
+static void proto_savedata(void)
+{
+    FATFS filesystem;
+    FIL data_file;
+
+    // Mount the disk
+    if (f_mount(&filesystem, "0:", 1) != FR_OK)
+    {
+        printf("File system mounting failed!\r\n");
+        return;
+    }
+
+    // Try to open/create today's file for append
+    if (f_open(&data_file, "0:testfile.csv",
+            FA_OPEN_ALWAYS | FA_READ | FA_WRITE) == FR_OK)
+    {
+        // Opening the file succeeded, now seek to the end
+        f_lseek(&data_file, f_size(&data_file));
+
+        // Ok, now we loop through the data we got and write it
+        for (uint16_t i = 0; i < incoming_data_pointer; i += 4)
+        {
+            // Cast the block back to a data struct
+            data_struct_t* data = (data_struct_t*)(incoming_data_array + i);
+
+            // Assemble time with the top bit
+            uint32_t timestamp = data->time;
+            timestamp |= (data->type & 0x80) << 9;
+            data->type &= 0x7F;
+
+            // Write out a CSV style line
+            // Columns: NodeID, Time, Type, Other
+            f_printf(&data_file, "%d, %d, %d, %d\n", source_node, timestamp,
+                    data->type, data->otherdata);
+        }
+
+        // Close file
+        f_close(&data_file);
+
+        printf("Data written to SD card - %d lines", incoming_data_pointer/4);
+    }
+
+    // Finally unmount the card (mounting 0x0 triggers unmount)
+    f_mount(0, "0:", 1);
+}
+
+/**
  * Handle a timeout by adjusting the state machine
  */
 void TIM2_IRQHandler(void)
@@ -272,14 +333,13 @@ void TIM2_IRQHandler(void)
         {
             // We didn't get anything from this node. Assume its dead, de-register
             //TODO
-
+#if RADIO_SLEEP_IDLE
             // Go back to sleep
             proto_state = PROTO_IDLE;
 
             TIM_Cmd(TIM2, DISABLE);
 
             // Radio off
-#if RADIO_SLEEP_IDLE
             radio_powerstate(false);
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
             power_set_minimum(PWR_RADIO, PWR_CLOCKSTOP);
@@ -307,6 +367,8 @@ void TIM2_IRQHandler(void)
             proto_state = PROTO_IDLE;
 
             TIM_Cmd(TIM2, DISABLE);
+
+            printf("Abandoning waiting for packet\r\n");
 
 #if RADIO_SLEEP_IDLE
             radio_powerstate(false);
