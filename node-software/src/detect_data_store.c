@@ -92,7 +92,7 @@ uint16_t store_get_write_position(void)
  * Retrieve a block of data from the data store
  *
  * @param data_p Pointer to write the data into
- * @param length Number of bytes to retrieve, must be at least number available
+ * @param length Number of bytes to retrieve, must be less than total available
  * @param skip   Number of bytes to skip ahead by
  */
 void store_get_data(uint8_t *data_p, uint16_t length, uint16_t skip)
