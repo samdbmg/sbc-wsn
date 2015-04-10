@@ -13,8 +13,6 @@
 /* Application-specific headers */
 #include "serial_interface.h"
 
-void putchar(char c);
-
 /**
  * Configure USART1 to use as a debug output
  */
@@ -86,7 +84,13 @@ void serial_print_char(char c)
     }
 }
 
-void putchar(char c)
+/**
+ * Output function used by external printf library
+ *
+ * @param p Unused pointer
+ * @param c Character to print
+ */
+void serial_printf_out(void * p, char c)
 {
     serial_print_char(c);
 }

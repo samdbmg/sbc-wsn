@@ -9,6 +9,7 @@
 void serial_init(void);
 void serial_print_string(char* string);
 void serial_print_char(char c);
+void serial_printf_out(void* p, char c);
 
 
 #endif /* SERIAL_INTERFACE_H_ */
