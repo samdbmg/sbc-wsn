@@ -16,6 +16,9 @@
 static power_system_store_t systems_wake = 0x0;
 static power_system_store_t systems_sleep = 0x0;
 
+// Store count of subsystems using GPIOD to keep it up
+volatile uint8_t power_gpiod_use_count = 0;
+
 // Scheduled function to run next we sleep
 static void (*sched_func)(void);
 

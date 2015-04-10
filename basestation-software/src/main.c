@@ -14,6 +14,8 @@
 #include "serial_interface.h"
 #include "radio_protocol.h"
 #include "printf.h"
+#include "gsm_modem.h"
+#include "base_misc.h"
 
 #define DEBUG_ENABLE 1
 
@@ -33,7 +35,15 @@ void main(void)
 
     // Activate the serial interface
     serial_init();
+    init_printf(NULL, serial_printf_out);
     printf("\r\n\r\nStarting up..\r\n\r\n");
+
+    misc_delay_init();
+
+    modem_setup();
+    modem_connection(true);
+    modem_gettime();
+
 
     // Configure the radio
     if (!radio_init(0xFF, proto_incoming_packet))

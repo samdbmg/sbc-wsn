@@ -281,10 +281,26 @@ static void proto_savedata(void)
     FATFS filesystem;
     FIL data_file;
 
+    // Mark that we're using GPIOD so the GSM module doesn't shut it down
+    power_gpiod_use_count++;
+
     // Mount the disk
     if (f_mount(&filesystem, "0:", 1) != FR_OK)
     {
         printf("File system mounting failed!\r\n");
+
+        // Kill power to some subsystems
+        RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, DISABLE);
+        RCC_APB2PeriphClockCmd (RCC_APB2Periph_SDIO, DISABLE);
+        RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_DMA2, DISABLE);
+
+        // GPIOD is used by the GSM modem, so we need to make sure its not in use
+        power_gpiod_use_count--;
+        if (power_gpiod_use_count == 0)
+        {
+            RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, DISABLE);
+        }
+
         return;
     }
 
@@ -320,6 +336,18 @@ static void proto_savedata(void)
 
     // Finally unmount the card (mounting 0x0 triggers unmount)
     f_mount(0, "0:", 1);
+
+    // Kill power to some subsystems
+    RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, DISABLE);
+    RCC_APB2PeriphClockCmd (RCC_APB2Periph_SDIO, DISABLE);
+    RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_DMA2, DISABLE);
+
+    // GPIOD is used by the GSM modem, so we need to make sure its not in use
+    power_gpiod_use_count--;
+    if (power_gpiod_use_count == 0)
+    {
+        RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, DISABLE);
+    }
 }
 
 /**
