@@ -9959,10 +9959,10 @@ Source: www.kingbright.com</description>
 <part name="R11" library="resistor" deviceset="R-EU_" device="0204/7" value="10M"/>
 <part name="+3V3" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
-<part name="C6" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="100n"/>
-<part name="C7" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="100n"/>
-<part name="C8" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="100n"/>
-<part name="C9" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="100n"/>
+<part name="C6" library="SparkFun-Capacitors" deviceset="CAP" device="0805" value="100n"/>
+<part name="C7" library="SparkFun-Capacitors" deviceset="CAP" device="0805" value="100n"/>
+<part name="C8" library="SparkFun-Capacitors" deviceset="CAP" device="0805" value="100n"/>
+<part name="C9" library="SparkFun-Capacitors" deviceset="CAP" device="0805" value="100n"/>
 <part name="C10" library="SparkFun-Capacitors" deviceset="CAP_POL" device="PTH2" value="10u"/>
 <part name="+3V4" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND5" library="supply1" deviceset="GND" device=""/>
@@ -9970,8 +9970,8 @@ Source: www.kingbright.com</description>
 <part name="Q2" library="special" deviceset="XTAL/S" device="" value="24MHz"/>
 <part name="GND7" library="supply1" deviceset="GND" device=""/>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
-<part name="C14" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="7p5"/>
-<part name="C15" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="7p5"/>
+<part name="C14" library="SparkFun-Capacitors" deviceset="CAP" device="0805" value="7p5"/>
+<part name="C15" library="SparkFun-Capacitors" deviceset="CAP" device="0805" value="7p5"/>
 <part name="C16" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="7p5"/>
 <part name="C17" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="7p5"/>
 <part name="C18" library="SparkFun-Capacitors" deviceset="CAP_POL" device="PTH2" value="10u"/>
