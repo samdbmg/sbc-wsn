@@ -371,8 +371,14 @@ UsedLibrary="C:/Users/Sam/Google Drive/Project/EAGLE Libraries/TICustom.lbr"
 UsedLibrary="C:/Users/Sam/Google Drive/Project/EAGLE Libraries/lightsensor.lbr"
 
 [Win_1]
+Type="Control Panel"
+Loc="480 207 1079 606"
+State=0
+Number=0
+
+[Win_2]
 Type="Schematic Editor"
-Loc="375 165 974 564"
+Loc="379 170 978 569"
 State=0
 Number=2
 File="node-base.sch"
@@ -415,13 +421,8 @@ ArcDirection=0
 AddLevel=2
 PadsSameType=0
 Layer=91
+Views=" 1: -5.73116 -4.10556 265.873 182.968"
 Sheet="1"
-
-[Win_2]
-Type="Control Panel"
-Loc="476 203 1075 602"
-State=2
-Number=0
 
 [Desktop]
 Screen="1366 768"
