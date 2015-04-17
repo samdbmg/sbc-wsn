@@ -64,6 +64,8 @@ int main(void)
 
     // Start the RTC (it will be set when the radio protocol kicks in)
     rtc_init();
+    //proto_run();
+    //proto_triggerupload();
 
     // Remain in sleep mode unless woken by interrupt
     while (true)
