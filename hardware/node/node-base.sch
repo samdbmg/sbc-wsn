@@ -10102,7 +10102,7 @@ Source: www.kingbright.com</description>
 <part name="R14" library="resistor" deviceset="R-EU_" device="0204/7" value="220"/>
 <part name="R15" library="resistor" deviceset="R-EU_" device="0204/7" value="220"/>
 <part name="U$4" library="FullyCustom" deviceset="TPS61291" device="DRV"/>
-<part name="L1" library="resistor" deviceset="L-EU" device="0204/7"/>
+<part name="L1" library="resistor" deviceset="L-EU" device="0204V"/>
 <part name="C12" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="10n"/>
 <part name="C13" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="10n"/>
 <part name="+3V9" library="supply1" deviceset="+3V3" device=""/>
@@ -11143,7 +11143,7 @@ Source: www.kingbright.com</description>
 <junction x="170.18" y="60.96"/>
 </segment>
 </net>
-<net name="N$4" class="0">
+<net name="VREG_SW" class="0">
 <segment>
 <pinref part="U$4" gate="G$1" pin="SW"/>
 <wire x1="210.82" y1="63.5" x2="213.36" y2="63.5" width="0.1524" layer="91"/>
