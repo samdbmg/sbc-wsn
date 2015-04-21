@@ -158,8 +158,8 @@
 <wire x1="81.5975" y1="0.635" x2="81.915" y2="49.8475" width="0.4064" layer="249"/>
 <wire x1="81.915" y1="49.8475" x2="0" y2="49.8475" width="0.4064" layer="249"/>
 <wire x1="0" y1="49.8475" x2="0" y2="0.635" width="0.4064" layer="249"/>
-<text x="1.27" y="47.3075" size="1.4224" layer="1" font="vector" ratio="20">SBC-WSN NODE</text>
-<text x="1.27" y="45.085" size="1.27" layer="1" font="vector" ratio="19">sdn501</text>
+<text x="1.27" y="47.3075" size="1.27" layer="1" font="vector" ratio="20">SBC-WSN NODE</text>
+<text x="1.27" y="45.4025" size="1.27" layer="1" font="vector" ratio="20" distance="56">SDN501 r0a610a1</text>
 </plain>
 <libraries>
 <library name="SparkFun-Capacitors">
