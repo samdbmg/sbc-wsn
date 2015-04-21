@@ -712,172 +712,6 @@ by exp-lbrs.ulp</description>
 </deviceset>
 </devicesets>
 </library>
-<library name="SparkFun-Connectors">
-<description>&lt;h3&gt;SparkFun Electronics' preferred foot prints&lt;/h3&gt;
-In this library you'll find connectors and sockets- basically anything that can be plugged into or onto.&lt;br&gt;&lt;br&gt;
-We've spent an enormous amount of time creating and checking these footprints and parts, but it is the end user's responsibility to ensure correctness and suitablity for a given componet or application. If you enjoy using this library, please buy one of our products at www.sparkfun.com.
-&lt;br&gt;&lt;br&gt;
-&lt;b&gt;Licensing:&lt;/b&gt; Creative Commons ShareAlike 4.0 International - https://creativecommons.org/licenses/by-sa/4.0/ 
-&lt;br&gt;&lt;br&gt;
-You are welcome to use this library for commercial purposes. For attribution, we ask that when you begin to sell your device using our footprint, you email us with a link to the product being sold. We want bragging rights that we helped (in a very small part) to create your 8th world wonder. We would like the opportunity to feature your device on our homepage.</description>
-<packages>
-<package name="SDCARD_4UCONN">
-<description>4UConn part#19646</description>
-<smd name="1" x="-1" y="6.77" dx="1.8" dy="0.9" layer="1"/>
-<smd name="2" x="-1" y="4.27" dx="1.8" dy="0.9" layer="1"/>
-<smd name="3" x="-1" y="2.52" dx="1.8" dy="0.9" layer="1"/>
-<smd name="CD" x="-1" y="1.02" dx="1.8" dy="0.9" layer="1"/>
-<smd name="4" x="-1" y="-0.73" dx="1.8" dy="0.9" layer="1"/>
-<smd name="5" x="-1" y="-3.23" dx="1.8" dy="0.9" layer="1"/>
-<smd name="6" x="-1" y="-5.73" dx="1.8" dy="0.9" layer="1"/>
-<smd name="7" x="-1" y="-8.15" dx="1.8" dy="0.9" layer="1"/>
-<smd name="8" x="-1" y="-9.85" dx="1.8" dy="0.9" layer="1"/>
-<smd name="SH@1" x="20" y="14.75" dx="2" dy="1.4" layer="1"/>
-<smd name="SH@2" x="21.15" y="-14.75" dx="2" dy="1.4" layer="1"/>
-<smd name="WP" x="-1" y="-13" dx="1.8" dy="1.1" layer="1"/>
-<smd name="9" x="-1" y="9.27" dx="1.8" dy="0.9" layer="1"/>
-<wire x1="0" y1="14.25" x2="28.8" y2="14.25" width="0.127" layer="51"/>
-<wire x1="28.8" y1="14.25" x2="28.8" y2="10" width="0.127" layer="51"/>
-<wire x1="28.8" y1="10" x2="28.8" y2="-8" width="0.127" layer="51"/>
-<wire x1="28.8" y1="-8" x2="28.8" y2="-10.5" width="0.127" layer="51"/>
-<wire x1="28.8" y1="-10.5" x2="28.8" y2="-14.25" width="0.127" layer="51"/>
-<wire x1="28.8" y1="-14.25" x2="0" y2="-14.25" width="0.127" layer="51"/>
-<wire x1="0" y1="-14.25" x2="0" y2="14.25" width="0.127" layer="51"/>
-<hole x="23.3" y="11.94" drill="1.55"/>
-<hole x="23.3" y="-12.32" drill="1.55"/>
-<text x="0.54" y="12.94" size="0.4064" layer="25">&gt;NAME</text>
-<text x="0.54" y="11.67" size="0.4064" layer="27">&gt;VALUE</text>
-<wire x1="-0.095" y1="10.019" x2="-0.095" y2="14.418" width="0.254" layer="21"/>
-<wire x1="-0.095" y1="14.418" x2="5.239" y2="14.418" width="0.254" layer="21"/>
-<wire x1="21.849" y1="14.318" x2="28.888" y2="14.318" width="0.254" layer="21"/>
-<wire x1="28.888" y1="14.318" x2="28.9" y2="12.9" width="0.254" layer="21"/>
-<wire x1="23.011" y1="-14.327" x2="28.888" y2="-14.327" width="0.254" layer="21"/>
-<wire x1="28.888" y1="-14.327" x2="28.888" y2="-13.349" width="0.254" layer="21"/>
-<wire x1="-0.095" y1="-14.238" x2="-0.095" y2="-14.327" width="0.254" layer="21"/>
-<wire x1="-0.095" y1="-14.327" x2="5.239" y2="-14.327" width="0.254" layer="21"/>
-<wire x1="35.6" y1="12" x2="35.6" y2="-13" width="0.127" layer="51"/>
-<text x="34.9" y="-9.3" size="1.27" layer="51" rot="R90">card lock position</text>
-<wire x1="28.8" y1="10" x2="28" y2="10" width="0.127" layer="51"/>
-<wire x1="28" y1="10" x2="18" y2="0" width="0.127" layer="51" curve="90"/>
-<wire x1="28" y1="-10.5" x2="18" y2="-0.5" width="0.127" layer="51" curve="-90"/>
-<wire x1="18" y1="0" x2="18" y2="-0.5" width="0.127" layer="51"/>
-<wire x1="28" y1="-10.5" x2="28.8" y2="-10.5" width="0.127" layer="51"/>
-</package>
-<package name="SD_1:1">
-<smd name="1" x="-1" y="6.77" dx="1.8" dy="0.9" layer="1"/>
-<smd name="2" x="-1" y="4.27" dx="1.8" dy="0.9" layer="1"/>
-<smd name="3" x="-1" y="2.52" dx="1.8" dy="0.9" layer="1"/>
-<smd name="CD" x="-1" y="1.02" dx="1.8" dy="0.9" layer="1"/>
-<smd name="4" x="-1" y="-0.73" dx="1.8" dy="0.9" layer="1"/>
-<smd name="5" x="-1" y="-3.23" dx="1.8" dy="0.9" layer="1"/>
-<smd name="6" x="-1" y="-5.73" dx="1.8" dy="0.9" layer="1"/>
-<smd name="7" x="-1" y="-8.15" dx="1.8" dy="0.9" layer="1"/>
-<smd name="8" x="-1" y="-9.85" dx="1.8" dy="0.9" layer="1"/>
-<smd name="SH@1" x="20" y="14.496" dx="2" dy="1.4" layer="1"/>
-<smd name="SH@2" x="21.15" y="-13.589" dx="2" dy="1.527" layer="1"/>
-<smd name="WP" x="-1" y="-13" dx="1.8" dy="1.1" layer="1"/>
-<smd name="9" x="-1" y="9.27" dx="1.8" dy="0.9" layer="1"/>
-<wire x1="0" y1="14.25" x2="28.8" y2="14.25" width="0.127" layer="51"/>
-<wire x1="28.8" y1="14.25" x2="28.8" y2="10" width="0.127" layer="51"/>
-<wire x1="28.8" y1="10" x2="28.8" y2="-10.5" width="0.127" layer="51"/>
-<wire x1="28.8" y1="-10.5" x2="28.8" y2="-14.25" width="0.127" layer="51"/>
-<wire x1="28.8" y1="-14.25" x2="0" y2="-14.25" width="0.127" layer="51"/>
-<wire x1="0" y1="-14.25" x2="0" y2="14.25" width="0.127" layer="51"/>
-<hole x="23.3" y="11.94" drill="1.55"/>
-<hole x="23.3" y="-12.32" drill="1.55"/>
-<text x="0.54" y="12.94" size="0.4064" layer="25">&gt;NAME</text>
-<text x="0.54" y="11.67" size="0.4064" layer="27">&gt;VALUE</text>
-<wire x1="-0.095" y1="10.019" x2="-0.095" y2="14.418" width="0.254" layer="21"/>
-<wire x1="-0.095" y1="14.418" x2="5.239" y2="14.418" width="0.254" layer="21"/>
-<wire x1="21.849" y1="14.318" x2="28.888" y2="14.318" width="0.254" layer="21"/>
-<wire x1="28.888" y1="14.318" x2="28.9" y2="12.9" width="0.254" layer="21"/>
-<wire x1="23.011" y1="-14.327" x2="28.888" y2="-14.327" width="0.254" layer="21"/>
-<wire x1="28.888" y1="-14.327" x2="28.888" y2="-13.349" width="0.254" layer="21"/>
-<wire x1="-0.095" y1="-14.238" x2="-0.095" y2="-14.327" width="0.254" layer="21"/>
-<wire x1="-0.095" y1="-14.327" x2="5.239" y2="-14.327" width="0.254" layer="21"/>
-<wire x1="35.6" y1="12" x2="35.6" y2="-13" width="0.127" layer="51"/>
-<text x="34.9" y="-9.3" size="1.27" layer="51" rot="R90">card lock position</text>
-<wire x1="28.8" y1="10" x2="28" y2="10" width="0.127" layer="51"/>
-<wire x1="28" y1="10" x2="18" y2="0" width="0.127" layer="51" curve="90"/>
-<wire x1="28" y1="-10.5" x2="18" y2="-0.5" width="0.127" layer="51" curve="-90"/>
-<wire x1="18" y1="0" x2="18" y2="-0.5" width="0.127" layer="51"/>
-<wire x1="28" y1="-10.5" x2="28.8" y2="-10.5" width="0.127" layer="51"/>
-</package>
-</packages>
-<symbols>
-<symbol name="SDCARD-1">
-<wire x1="-7.62" y1="17.78" x2="7.62" y2="17.78" width="0.254" layer="94"/>
-<wire x1="7.62" y1="17.78" x2="7.62" y2="-17.78" width="0.254" layer="94"/>
-<wire x1="7.62" y1="-17.78" x2="-7.62" y2="-17.78" width="0.254" layer="94"/>
-<wire x1="-7.62" y1="-17.78" x2="-7.62" y2="17.78" width="0.254" layer="94"/>
-<pin name="CD/DAT3" x="-12.7" y="0" length="middle"/>
-<pin name="CMD" x="-12.7" y="2.54" length="middle"/>
-<pin name="VSS1" x="-12.7" y="-7.62" length="middle" direction="pwr"/>
-<pin name="VDD" x="-12.7" y="15.24" length="middle" direction="pwr"/>
-<pin name="CLK" x="-12.7" y="5.08" length="middle"/>
-<pin name="VSS2" x="-12.7" y="-10.16" length="middle" direction="pwr"/>
-<pin name="DAT0" x="-12.7" y="12.7" length="middle"/>
-<pin name="DAT1" x="-12.7" y="10.16" length="middle"/>
-<pin name="DAT2" x="-12.7" y="7.62" length="middle"/>
-<text x="-7.366" y="18.288" size="1.778" layer="95">&gt;Name</text>
-<pin name="WP" x="-12.7" y="-5.08" length="middle"/>
-<pin name="CD" x="-12.7" y="-2.54" length="middle"/>
-<text x="-7.112" y="-20.32" size="1.778" layer="96">&gt;Value</text>
-<pin name="SH@1" x="-12.7" y="-15.24" length="middle"/>
-<pin name="SH@2" x="-12.7" y="-12.7" length="middle"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="SD_CARD_SOCKET" prefix="U">
-<description>SD Memory Card Connector, push-push normal type, CD enable, WP enable</description>
-<gates>
-<gate name="G$1" symbol="SDCARD-1" x="-66.04" y="10.16"/>
-</gates>
-<devices>
-<device name="4UCON" package="SDCARD_4UCONN">
-<connects>
-<connect gate="G$1" pin="CD" pad="CD"/>
-<connect gate="G$1" pin="CD/DAT3" pad="1"/>
-<connect gate="G$1" pin="CLK" pad="5"/>
-<connect gate="G$1" pin="CMD" pad="2"/>
-<connect gate="G$1" pin="DAT0" pad="7"/>
-<connect gate="G$1" pin="DAT1" pad="8"/>
-<connect gate="G$1" pin="DAT2" pad="9"/>
-<connect gate="G$1" pin="SH@1" pad="SH@1"/>
-<connect gate="G$1" pin="SH@2" pad="SH@2"/>
-<connect gate="G$1" pin="VDD" pad="4"/>
-<connect gate="G$1" pin="VSS1" pad="3"/>
-<connect gate="G$1" pin="VSS2" pad="6"/>
-<connect gate="G$1" pin="WP" pad="WP"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-<device name="" package="SD_1:1">
-<connects>
-<connect gate="G$1" pin="CD" pad="CD"/>
-<connect gate="G$1" pin="CD/DAT3" pad="1"/>
-<connect gate="G$1" pin="CLK" pad="5"/>
-<connect gate="G$1" pin="CMD" pad="2"/>
-<connect gate="G$1" pin="DAT0" pad="7"/>
-<connect gate="G$1" pin="DAT1" pad="8"/>
-<connect gate="G$1" pin="DAT2" pad="9"/>
-<connect gate="G$1" pin="SH@1" pad="SH@1"/>
-<connect gate="G$1" pin="SH@2" pad="SH@2"/>
-<connect gate="G$1" pin="VDD" pad="4"/>
-<connect gate="G$1" pin="VSS1" pad="3"/>
-<connect gate="G$1" pin="VSS2" pad="6"/>
-<connect gate="G$1" pin="WP" pad="WP"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="FullyCustom">
 <packages>
 <package name="ARDUINO-NOHOLE">
@@ -1035,6 +869,33 @@ distributor RS 112-3794</description>
 <wire x1="-2" y1="3.5" x2="3.5" y2="3.5" width="0.127" layer="21"/>
 <text x="-2.2" y="0.3" size="0.8128" layer="25">&gt;NAME</text>
 </package>
+<package name="SDCARD_2041021-3">
+<smd name="SH3" x="-13.65" y="1.45" dx="1.5" dy="2.8" layer="1"/>
+<smd name="SH4" x="13.65" y="1.45" dx="1.5" dy="2.8" layer="1"/>
+<smd name="SH1" x="-13.65" y="22.95" dx="1.5" dy="2.8" layer="1"/>
+<smd name="SH2" x="11.45" y="22.95" dx="1.5" dy="2.8" layer="1"/>
+<smd name="9" x="9.375" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="1" x="6.875" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="2" x="4.375" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="3" x="1.875" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="4" x="-0.625" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="5" x="-3.125" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="6" x="-5.625" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="8" x="-9.75" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="7" x="-8.05" y="24.7" dx="1" dy="1.5" layer="1"/>
+<smd name="CD" x="-11.05" y="24.7" dx="0.7" dy="1.5" layer="1"/>
+<smd name="WP" x="-12.25" y="24.7" dx="0.7" dy="1.5" layer="1"/>
+<hole x="-11.5" y="21.9" drill="1.1"/>
+<hole x="9.5" y="21.9" drill="1.6"/>
+<wire x1="-13.8" y1="24" x2="-13.75" y2="24" width="0.127" layer="21"/>
+<wire x1="-13.75" y1="24" x2="-13.75" y2="0.4" width="0.127" layer="21"/>
+<wire x1="-13.75" y1="0.4" x2="14.05" y2="0.4" width="0.127" layer="21"/>
+<wire x1="14.05" y1="0.4" x2="14.05" y2="0.5" width="0.127" layer="21"/>
+<wire x1="14.05" y1="0.5" x2="13.7" y2="0.5" width="0.127" layer="21"/>
+<wire x1="13.7" y1="0.5" x2="13.7" y2="24.1" width="0.127" layer="21"/>
+<wire x1="13.7" y1="24.1" x2="-13.85" y2="24.1" width="0.127" layer="21"/>
+<text x="-5.85" y="17.1" size="1.27" layer="25">&gt;NAME</text>
+</package>
 </packages>
 <symbols>
 <symbol name="ARDUINO_GSM">
@@ -1089,6 +950,25 @@ distributor RS 112-3794</description>
 <text x="-5.08" y="3.81" size="1.778" layer="95">&gt;NAME</text>
 <text x="-5.08" y="1.27" size="1.778" layer="96">&gt;VALUE</text>
 <rectangle x1="-5.08" y1="-1.27" x2="5.08" y2="1.27" layer="94"/>
+</symbol>
+<symbol name="SDCARD-1">
+<wire x1="-7.62" y1="17.78" x2="7.62" y2="17.78" width="0.254" layer="94"/>
+<wire x1="7.62" y1="17.78" x2="7.62" y2="-12.7" width="0.254" layer="94"/>
+<wire x1="7.62" y1="-12.7" x2="-7.62" y2="-12.7" width="0.254" layer="94"/>
+<wire x1="-7.62" y1="-12.7" x2="-7.62" y2="17.78" width="0.254" layer="94"/>
+<pin name="CD/DAT3" x="-12.7" y="0" length="middle"/>
+<pin name="CMD" x="-12.7" y="2.54" length="middle"/>
+<pin name="VSS1" x="-12.7" y="-7.62" length="middle" direction="pwr"/>
+<pin name="VDD" x="-12.7" y="15.24" length="middle" direction="pwr"/>
+<pin name="CLK" x="-12.7" y="5.08" length="middle"/>
+<pin name="VSS2" x="-12.7" y="-10.16" length="middle" direction="pwr"/>
+<pin name="DAT0" x="-12.7" y="12.7" length="middle"/>
+<pin name="DAT1" x="-12.7" y="10.16" length="middle"/>
+<pin name="DAT2" x="-12.7" y="7.62" length="middle"/>
+<text x="-7.366" y="18.288" size="1.778" layer="95">&gt;Name</text>
+<pin name="WP" x="-12.7" y="-5.08" length="middle"/>
+<pin name="CD" x="-12.7" y="-2.54" length="middle"/>
+<text x="-7.112" y="-15.24" size="1.778" layer="96">&gt;Value</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -1167,6 +1047,32 @@ distributor RS 112-3794</description>
 <connects>
 <connect gate="G$1" pin="1" pad="1"/>
 <connect gate="G$1" pin="2" pad="2"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="SD_CARD_SOCKET" prefix="U">
+<description>SD Memory Card Connector, push-push normal type, CD enable, WP enable</description>
+<gates>
+<gate name="G$1" symbol="SDCARD-1" x="-66.04" y="10.16"/>
+</gates>
+<devices>
+<device name="2041021FFROMTESIFOPEN" package="SDCARD_2041021-3">
+<connects>
+<connect gate="G$1" pin="CD" pad="CD"/>
+<connect gate="G$1" pin="CD/DAT3" pad="1"/>
+<connect gate="G$1" pin="CLK" pad="5"/>
+<connect gate="G$1" pin="CMD" pad="2"/>
+<connect gate="G$1" pin="DAT0" pad="7"/>
+<connect gate="G$1" pin="DAT1" pad="8"/>
+<connect gate="G$1" pin="DAT2" pad="9"/>
+<connect gate="G$1" pin="VDD" pad="4"/>
+<connect gate="G$1" pin="VSS1" pad="3 SH1 SH2 SH3 SH4"/>
+<connect gate="G$1" pin="VSS2" pad="6"/>
+<connect gate="G$1" pin="WP" pad="WP"/>
 </connects>
 <technologies>
 <technology name=""/>
@@ -5926,7 +5832,7 @@ These are standard SMD and PTH capacitors. Normally 10uF, 47uF, and 100uF in ele
 <part name="+3V5" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND5" library="supply1" deviceset="GND" device=""/>
 <part name="X1" library="FullyCustom" deviceset="BU-SMA-1-7HOLE" device=""/>
-<part name="U1" library="SparkFun-Connectors" deviceset="SD_CARD_SOCKET" device="4UCON"/>
+<part name="U1" library="FullyCustom" deviceset="SD_CARD_SOCKET" device="2041021FFROMTESIFOPEN"/>
 <part name="GND6" library="supply1" deviceset="GND" device=""/>
 <part name="+3V6" library="supply1" deviceset="+3V3" device=""/>
 <part name="U$3" library="FullyCustom" deviceset="ARDUINO_GSMSHIELD" device=""/>
@@ -6068,17 +5974,9 @@ These are standard SMD and PTH capacitors. Normally 10uF, 47uF, and 100uF in ele
 <pinref part="GND6" gate="1" pin="GND"/>
 <wire x1="127" y1="109.22" x2="127" y2="106.68" width="0.1524" layer="91"/>
 <pinref part="U1" gate="G$1" pin="VSS2"/>
-<wire x1="127" y1="106.68" x2="127" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="127" y1="104.14" x2="127" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="127" y1="101.6" x2="127" y2="96.52" width="0.1524" layer="91"/>
+<wire x1="127" y1="106.68" x2="127" y2="96.52" width="0.1524" layer="91"/>
 <wire x1="165.1" y1="106.68" x2="127" y2="106.68" width="0.1524" layer="91"/>
 <junction x="127" y="106.68"/>
-<pinref part="U1" gate="G$1" pin="SH@2"/>
-<wire x1="165.1" y1="104.14" x2="127" y2="104.14" width="0.1524" layer="91"/>
-<junction x="127" y="104.14"/>
-<pinref part="U1" gate="G$1" pin="SH@1"/>
-<wire x1="165.1" y1="101.6" x2="127" y2="101.6" width="0.1524" layer="91"/>
-<junction x="127" y="101.6"/>
 </segment>
 <segment>
 <pinref part="U$3" gate="G$1" pin="GND"/>
