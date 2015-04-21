@@ -148,11 +148,11 @@
 <wire x1="76.18" y1="0" x2="76.18" y2="101.27" width="0" layer="20"/>
 <wire x1="76.18" y1="101.27" x2="0" y2="101.27" width="0" layer="20"/>
 <wire x1="0" y1="101.27" x2="0" y2="0" width="0" layer="20"/>
-<wire x1="73.66" y1="3.81" x2="73.66" y2="96.52" width="0.6096" layer="20"/>
-<wire x1="73.66" y1="96.52" x2="1.27" y2="96.52" width="0.6096" layer="20"/>
-<wire x1="1.27" y1="96.52" x2="1.27" y2="3.81" width="0.6096" layer="20"/>
-<wire x1="1.27" y1="3.81" x2="73.66" y2="3.81" width="0.6096" layer="20"/>
-<text x="36.83" y="93.98" size="1.4224" layer="1" font="vector" ratio="20">SBC-WSN BASE sdn501</text>
+<wire x1="73.66" y1="3.81" x2="73.66" y2="96.52" width="0.6096" layer="249"/>
+<wire x1="73.66" y1="96.52" x2="1.27" y2="96.52" width="0.6096" layer="249"/>
+<wire x1="1.27" y1="96.52" x2="1.27" y2="3.81" width="0.6096" layer="249"/>
+<wire x1="1.27" y1="3.81" x2="73.66" y2="3.81" width="0.6096" layer="249"/>
+<text x="36.83" y="93.98" size="1.27" layer="1" font="vector" ratio="20">SBC-WSN BASE sdn501 r8404513</text>
 </plain>
 <libraries>
 <library name="transistor-power">
