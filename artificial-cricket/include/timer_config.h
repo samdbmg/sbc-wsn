@@ -23,7 +23,7 @@ void call_timer_female(bool enable);
 #define MARKSPACE_FREQUENCY     1000/3 // For 3ms total
 #define MARKSPACE_PSC           10     // To fit ticks in 16 bits, prescale is needed
 #define MARKSPACE_TICKS         TIMER_BASE_FREQUENCY/(MARKSPACE_FREQUENCY * MARKSPACE_PSC)
-#define MARKSPACE_COMPARE_VALUE 2 * MARKSPACE_TICKS/3
+#define MARKSPACE_COMPARE_VALUE MARKSPACE_TICKS/3
 
 #define CALL_TIMER_PSC          TIMER_BASE_FREQUENCY/1000000
 
