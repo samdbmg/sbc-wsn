@@ -53,7 +53,7 @@ uint8_t radio_config_data[][2] =
         {0x2E, 0xB8}, // RegSyncConfig - Sync on, FIFO on SyncAddress, 2 byte sync word no errors
         {0x2F, 0x2D}, // RegSyncValue1 - Set first part of sync word
         {0x30, 0x64}, // RegSyncValue2 - Set second part of sync word
-        {0x37, 0x98}, // RegPacketConfig1 - Variable length, DC free off, CRC on, clear off, address off
+        {0x37, 0x90}, // RegPacketConfig1 - Variable length, DC free off, CRC on, clear off, address off
         {0x38, 66  }, // RegPayloadLength - Max payload 66 bytes
         {0x3C, 0x8F}, // RegFifoThresh - Transmit when bits available, threshold is 15
         {0x3D, 0x12}, // RegPacketConfig2 - 2 bit restart delay, Auto restart on

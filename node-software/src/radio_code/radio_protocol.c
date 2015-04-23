@@ -128,8 +128,7 @@ void proto_run(void)
             // Send the data
             _proto_uploaddata();
 
-            // Enable receive mode and wait for acknowledge
-            radio_receive_activate(true);
+            // Wait for acknowledge
             proto_state = PROTO_WAITACK;
 
             misc_delay(RADIO_TIMEOUT, false);
@@ -213,8 +212,9 @@ static void _proto_uploaddata(void)
 
     packet_data[0] = packet_count;
 
-    // Turn the radio on
+    // Turn the radio on and enable receive for acking
     radio_powerstate(true);
+    radio_receive_activate(true);
 
     // Compose and send a string of full packets
     for (uint8_t i = 0; i < packet_count - 1; i++)

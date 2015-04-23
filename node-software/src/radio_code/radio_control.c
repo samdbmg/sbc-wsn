@@ -269,6 +269,11 @@ void radio_receive_activate(bool activate)
 {
     if (activate)
     {
+    	if (_radio_state == RADIO_SLEEP)
+    	{
+    		radio_powerstate(true);
+    	}
+
         // Restart RX to avoid deadlock
         _radio_write_register(RADIO_REG_PACKETCONFIG2, 0x16);
 
@@ -279,7 +284,7 @@ void radio_receive_activate(bool activate)
     else
     {
         radio_spi_prepinterrupt(RADIO_INT_NONE);
-        _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE | RADIO_REG_OPMODE_LISTENABORT);
+        //_radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE | RADIO_REG_OPMODE_LISTENABORT);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_WAKE);
         _radio_state = RADIO_WAKE;
     }
