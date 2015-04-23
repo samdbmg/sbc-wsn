@@ -26,6 +26,7 @@ static void _detect_timer_config(void);
 static void _detect_comparator_config(void);
 static void _detect_reset_to_idle(void);
 static void _detect_transient_handler(void);
+static void _detect_start_new(void);
 
 /* Variable declarations */
 static uint8_t call_count;
@@ -66,7 +67,7 @@ static void _detect_timer_config(void)
         .fallAction = timerInputActionStop,
         .mode = timerModeUp,
         .oneShot = false,
-        .prescale = timerPrescale2,
+        .prescale = timerPrescale16,
         .quadModeX4 = false,
         .riseAction = timerInputActionReloadStart,
         .sync = false,
@@ -75,7 +76,7 @@ static void _detect_timer_config(void)
     TIMER_Init(TIMER0, &timerInit);
 
     // Wrap around is about 1kHz
-    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
+    TIMER_TopSet(TIMER0, DETECT_HIGH_UB);
 
     // Enable the overflow interrupt
     TIMER_IntEnable(TIMER0, TIMER_IEN_OF);
@@ -153,8 +154,35 @@ void TIMER0_IRQHandler(void)
     }
 #endif
 
-    // Stop and reset the timer for next detect
-    _detect_reset_to_idle();
+    // If we're in the last stage of female detection, timeout means success
+    if (detect_state == DETECT_LOW_F)
+    {
+    	store_call(true);
+    	call_count = 0;
+    	_detect_reset_to_idle();
+    }
+    // If we got enough hits, enable female detect mode
+    else if (call_count >= DETECT_MINCOUNT)
+    {
+    	detect_state = DETECT_WAIT_F;
+
+        // Set edge trigger to fire on a rising edge
+        ACMP0->CTRL &= ~ACMP_CTRL_IFALL;
+        ACMP0->CTRL |= ACMP_CTRL_IRISE;
+
+        // Reset the timers
+        TIMER_Enable(TIMER0, false);
+        TIMER_CounterSet(TIMER0, 0);
+        TIMER_TopSet(TIMER0, DETECT_WAIT_F_UB);
+        TIMER_CounterSet(TIMER0, DETECT_LOW_UB);
+        TIMER_Enable(TIMER0, true);
+
+    }
+    else
+    {
+		// Stop and reset the timer for next detect
+		_detect_reset_to_idle();
+    }
 }
 
 /**
@@ -167,33 +195,16 @@ void ACMP0_IRQHandler(void)
     switch(detect_state)
     {
         case DETECT_IDLE:
-            detect_state = DETECT_HIGH;
-
-            // Set edge trigger to fire on a falling edge
-            ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
-            ACMP0->CTRL |= ACMP_CTRL_IFALL;
-
-            // Power the timer back up
-            CMU_ClockEnable(cmuClock_TIMER0, true);
-
-            // Indicate we need to stay awake to keep the timer on
-            power_set_minimum(PWR_DETECT, PWR_EM1);
-
-            // Reset the timers
-            TIMER_Enable(TIMER0, false);
-            TIMER_CounterSet(TIMER0, 0);
-            TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
-            TIMER_Enable(TIMER0, true);
+            _detect_start_new();
             break;
 
         case DETECT_HIGH:
             // Did this falling edge arrive approx 1ms after the rise?
-            if (timer_val > get_ticks_from_ms(DETECT_HIGH_LB, DETECT_PSC))
+            if (timer_val > DETECT_HIGH_LB)
             {
 #ifdef DETECT_DEBUG_ON
                 debug_data_array[2 * call_count] = timer_val;
 #endif
-
 
                 detect_state = DETECT_LOW;
 
@@ -204,7 +215,7 @@ void ACMP0_IRQHandler(void)
                 // Reset the timers again
                 TIMER_Enable(TIMER0, false);
                 TIMER_CounterSet(TIMER0, 0);
-                TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_LOW_UB, DETECT_PSC));
+                TIMER_TopSet(TIMER0, DETECT_LOW_UB);
                 TIMER_Enable(TIMER0, true);
             }
             else
@@ -215,7 +226,7 @@ void ACMP0_IRQHandler(void)
 
         case DETECT_LOW:
             // Did this rising edge arrive approx 2ms after the fall?
-            if (timer_val > get_ticks_from_ms(DETECT_LOW_LB, DETECT_PSC))
+            if (timer_val > DETECT_LOW_LB)
             {
 #ifdef DETECT_DEBUG_ON
                 debug_data_array[2 * call_count + 1] = timer_val;
@@ -224,10 +235,20 @@ void ACMP0_IRQHandler(void)
                 // We got a complete pulse, mark a click
                 call_count++;
 
-                // If we now have a full call, reset now ready for the next one
+                // If we now have a full call, enter female mode
                 if (call_count >= DETECT_MAXCOUNT)
                 {
-                    _detect_reset_to_idle();
+					detect_state = DETECT_WAIT_F;
+
+					// Set edge trigger to fire on a rising edge
+					ACMP0->CTRL &= ~ACMP_CTRL_IFALL;
+					ACMP0->CTRL |= ACMP_CTRL_IRISE;
+
+					// Reset the timers
+					TIMER_Enable(TIMER0, false);
+					TIMER_CounterSet(TIMER0, 0);
+					TIMER_TopSet(TIMER0, DETECT_WAIT_F_UB);
+					TIMER_Enable(TIMER0, true);
                 }
                 else
                 {
@@ -240,7 +261,7 @@ void ACMP0_IRQHandler(void)
                     // Reset the timers again
                     TIMER_Enable(TIMER0, false);
                     TIMER_CounterSet(TIMER0, 0);
-                    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
+                    TIMER_TopSet(TIMER0, DETECT_HIGH_UB);
                     TIMER_Enable(TIMER0, true);
                 }
             }
@@ -249,9 +270,117 @@ void ACMP0_IRQHandler(void)
                 _detect_transient_handler();
             }
             break;
+        case DETECT_WAIT_F:
+        	if (timer_val > DETECT_WAIT_F_LB)
+        	{
+        		// Ok, this was either a female or a new call coming in, let's wait for the low
+				detect_state = DETECT_HIGH_F;
+
+                // Set edge trigger to fire on a falling edge
+                ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
+                ACMP0->CTRL |= ACMP_CTRL_IFALL;
+
+                // Reset the timers again
+                TIMER_Enable(TIMER0, false);
+                TIMER_CounterSet(TIMER0, 0);
+                TIMER_TopSet(TIMER0, DETECT_HIGH_UB);
+                TIMER_Enable(TIMER0, true);
+        	}
+        	else if (timer_val > 1181)
+        	{
+        		// We came in too early so it's probably a new detect. Save the old, start again
+        		store_call(false);
+        		_detect_start_new();
+        	}
+        	else
+        	{
+        		_detect_transient_handler();
+        	}
+        	break;
+        case DETECT_HIGH_F:
+        	if (timer_val > DETECT_HIGH_LB)
+        	{
+        		// Now we wait to see if this was a new call or just a female
+				detect_state = DETECT_LOW_F;
+
+                // Set edge trigger to fire on a rising edge
+                ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
+                ACMP0->CTRL |= ACMP_CTRL_IFALL;
+
+                // Reset the timers again
+                TIMER_Enable(TIMER0, false);
+                TIMER_CounterSet(TIMER0, 0);
+                TIMER_TopSet(TIMER0, DETECT_LOW_UB);
+                TIMER_Enable(TIMER0, true);
+        	}
+        	else
+        	{
+        		// Transient probably
+        		_detect_transient_handler();
+        	}
+        	break;
+        case DETECT_LOW_F:
+        	// If we got a click here it wasn't a female, another call started.
+        	// Save the old one
+        	store_call(false);
+
+        	// Reset as if we'd seen the new call
+        	_detect_start_new();
+
+        	call_count++;
+
+        	// And shortcut directly as if we just left DETECT_HIGH
+            detect_state = DETECT_LOW;
+
+            // Set edge trigger to fire on a rising edge
+            ACMP0->CTRL &= ~ACMP_CTRL_IFALL;
+            ACMP0->CTRL |= ACMP_CTRL_IRISE;
+
+            // Reset the timers again
+            TIMER_Enable(TIMER0, false);
+            TIMER_CounterSet(TIMER0, 0);
+            TIMER_TopSet(TIMER0, DETECT_LOW_UB);
+            TIMER_Enable(TIMER0, true);
+            break;
     }
     // Clear interrupt flag
     ACMP_IntClear(ACMP0, ACMP_IFC_EDGE);
+}
+
+/**
+ * Begin a new detection operation
+ */
+static void _detect_start_new(void)
+{
+	detect_state = DETECT_HIGH;
+
+#ifdef DETECT_DEBUG_ON
+
+    for (uint8_t i = 0; i < 16; i++)
+    {
+        debug_data_array[i] = 0;
+    }
+#endif
+
+    // Reset counter
+    call_count = 0;
+    transient_count = 0;
+
+	// Set edge trigger to fire on a falling edge
+	ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
+	ACMP0->CTRL |= ACMP_CTRL_IFALL;
+
+	// Power the timer back up
+	CMU_ClockEnable(cmuClock_TIMER0, true);
+
+	// Indicate we need to stay awake to keep the timer on
+	power_set_minimum(PWR_DETECT, PWR_EM1);
+
+	// Reset the timers
+	TIMER_Enable(TIMER0, false);
+	TIMER_CounterSet(TIMER0, 0);
+	TIMER_TopSet(TIMER0, DETECT_HIGH_UB);
+	TIMER_Enable(TIMER0, true);
 }
 
 /**
@@ -279,7 +408,7 @@ static void _detect_reset_to_idle(void)
     // Stop and reset the timer for next detect
     TIMER_Enable(TIMER0, false);
     TIMER_CounterSet(TIMER0, 0);
-    TIMER_TopSet(TIMER0, get_ticks_from_ms(DETECT_HIGH_UB, DETECT_PSC));
+    TIMER_TopSet(TIMER0, DETECT_HIGH_UB);
 
     // Kill timer power
     CMU_ClockEnable(cmuClock_TIMER0, false);
@@ -289,26 +418,14 @@ static void _detect_reset_to_idle(void)
     {
         store_call(false);
     }
-#ifdef DETECT_DEBUG_ON
-    else
-    {
-        call_count++;
-    }
-
-    for (uint8_t i = 0; i < 16; i++)
-    {
-        debug_data_array[i] = 0;
-    }
-#endif
 
     // Set edge trigger to fire on a rising edge
     ACMP0->CTRL &= ~ACMP_CTRL_IFALL;
     ACMP0->CTRL |= ACMP_CTRL_IRISE;
 
-    // Reset counter
+    // Reset state
     call_count = 0;
     detect_state = DETECT_IDLE;
-    transient_count = 0;
 
     // Mark we're ready to go to sleep
     power_set_minimum(PWR_DETECT, PWR_EM3);

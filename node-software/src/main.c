@@ -59,11 +59,11 @@ int main(void)
     ext_init();
 
     // Prep radio for receive
-    radio_powerstate(true);
-    radio_receive_activate(true);
+    //radio_powerstate(true);
+    //radio_receive_activate(true);
 
     // Start the RTC (it will be set when the radio protocol kicks in)
-    rtc_init();
+    //rtc_init();
     //proto_run();
     //proto_triggerupload();
 
@@ -72,6 +72,7 @@ int main(void)
     {
         proto_run();
         power_sleep();
+        //proto_triggerupload();
     }
 }
 
