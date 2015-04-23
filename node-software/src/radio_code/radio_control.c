@@ -99,6 +99,10 @@ bool radio_send_data(uint8_t* data_p, uint16_t length, uint8_t dest_addr)
         return false;
     }
 
+
+    // Restart RX to avoid deadlock
+    _radio_write_register(RADIO_REG_PACKETCONFIG2, 0x16);
+
     // Find out if we're receiving to reset when done
     bool recv_active = (_radio_state == RADIO_LISTEN);
 
@@ -191,6 +195,10 @@ uint16_t radio_retrieve_data(uint8_t* data_p, uint16_t length)
  */
 void _radio_payload_ready(void)
 {
+    // Disable receive
+    radio_receive_activate(false);
+
+
     radio_spi_select(true);
 
     // Address validation success flag
@@ -261,6 +269,9 @@ void radio_receive_activate(bool activate)
 {
     if (activate)
     {
+        // Restart RX to avoid deadlock
+        _radio_write_register(RADIO_REG_PACKETCONFIG2, 0x16);
+
         radio_spi_prepinterrupt(RADIO_INT_RXREADY);
         _radio_write_register(RADIO_REG_OPMODE, RADIO_REG_OPMODE_RX);
         _radio_state = RADIO_LISTEN;

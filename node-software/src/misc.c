@@ -107,6 +107,11 @@ void TIMER1_IRQHandler(void)
 
     TIMER_IntClear(TIMER1, TIMER_IFC_OF);
 
+    misc_delay_cancel();
+}
+
+void misc_delay_cancel(void)
+{
     // Make sure the timer stopped, power it down
     TIMER_Enable(TIMER1, false);
     CMU_ClockEnable(cmuClock_TIMER1, false);

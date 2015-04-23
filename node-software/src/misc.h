@@ -15,6 +15,7 @@
 void misc_delay(uint16_t ms, bool block);
 bool misc_delay_active(void);
 void misc_delay_init(void);
+void misc_delay_cancel(void);
 
 
 #endif /* MISC_H_ */

@@ -373,6 +373,8 @@ void TIM2_IRQHandler(void)
             power_set_minimum(PWR_RADIO, PWR_CLOCKSTOP);
 #endif
 
+            printf("Node quiet, ignoring\r\n");
+
             break;
         }
         case PROTO_RECV:
@@ -386,10 +388,12 @@ void TIM2_IRQHandler(void)
             proto_state = PROTO_ARQ;
 
             TIM_Cmd(TIM2, DISABLE);
+            printf("Timer ran out, last packets lost\r\n");
 
             break;
         }
         case PROTO_ARQ:
+        case PROTO_REPEATING:
         {
             // Well that's gone well. Call the whole thing off?
             proto_state = PROTO_IDLE;
@@ -408,6 +412,7 @@ void TIM2_IRQHandler(void)
         }
         default:
             // Do nothing
+            printf("WTF did we get in state %d\r\n", proto_state);
             break;
     }
 

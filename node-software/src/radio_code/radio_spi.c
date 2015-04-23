@@ -124,6 +124,16 @@ void radio_spi_transmitwait(void)
         // A delay will trigger a sleep, but will time out eventually
         power_sleep();
     }
+
+    misc_delay_cancel();
+
+    if (interrupt_state != RADIO_INT_NONE)
+    {
+    	while (true)
+    	{
+
+    	}
+    }
 }
 
 /**
