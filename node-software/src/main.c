@@ -47,7 +47,7 @@ int main(void)
     misc_delay_init();
 
     // Initialise the radio chip
-    if (!radio_init(NODE_ADDR, proto_incoming_packet))
+    if (!radio_init(proto_read_address(), proto_incoming_packet))
     {
     	status_led_set(STATUS_RED, true);
     	status_illuminate(true);

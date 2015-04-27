@@ -8,10 +8,10 @@
 typedef enum {PROTO_SETUP, PROTO_IDLE, PROTO_SEND, PROTO_WAITACK} proto_radio_state_t;
 
 #define BASE_ADDR 0xFF
-#define NODE_ADDR 0x01
 
 void proto_init(void);
 void proto_incoming_packet(uint16_t bytes);
+uint8_t proto_read_address(void);
 
 void proto_run(void);
 

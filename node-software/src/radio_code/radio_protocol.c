@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 /* Peripheral control headers */
-
+#include "em_gpio.h"
 
 /* Application-specific headers */
 #include "radio_protocol.h"
@@ -172,6 +172,44 @@ void proto_triggerupload(void)
 	status_led_set(STATUS_GREEN, true);
 	proto_state = PROTO_SEND;
     // This will exit the interrupt handler into proto_run and stuff will happen
+}
+
+/*
+ * Read the node address from the DIP switches
+ *
+ * @return Address set on switches
+ */
+uint8_t proto_read_address(void)
+{
+	// Enable all the address pins
+	GPIO_PinModeSet(gpioPortC, 8, gpioModeInputPull, 1);
+	GPIO_PinModeSet(gpioPortC, 9, gpioModeInputPull, 1);
+	GPIO_PinModeSet(gpioPortC, 10, gpioModeInputPull, 1);
+	GPIO_PinModeSet(gpioPortC, 11, gpioModeInputPull, 1);
+	GPIO_PinModeSet(gpioPortC, 13, gpioModeInputPull, 1);
+	GPIO_PinModeSet(gpioPortC, 14, gpioModeInputPull, 1);
+
+	GPIO_PinModeSet(gpioPortD, 6, gpioModeInputPull, 1);
+
+	// Capture the low end and shift as needed
+	uint8_t addr_bits = (GPIO_PortInGet(gpioPortC) & 0x0F00) >> 8;
+	addr_bits |= (GPIO_PortInGet(gpioPortC) & 0x6000) >> 9; // Adjust for no bit 12
+
+	// Capture top bit
+	addr_bits |= GPIO_PinInGet(gpioPortD, 6);
+
+	// Disable all the address pins
+	GPIO_PinModeSet(gpioPortC, 8, gpioModeDisabled, 0);
+	GPIO_PinModeSet(gpioPortC, 9, gpioModeDisabled, 0);
+	GPIO_PinModeSet(gpioPortC, 10, gpioModeDisabled, 0);
+	GPIO_PinModeSet(gpioPortC, 11, gpioModeDisabled, 0);
+	GPIO_PinModeSet(gpioPortC, 13, gpioModeDisabled, 0);
+	GPIO_PinModeSet(gpioPortC, 14, gpioModeDisabled, 0);
+
+	GPIO_PinModeSet(gpioPortD, 6, gpioModeDisabled, 0);
+
+	// We flip the address because switch "on" sets to low
+	return ~addr_bits;
 }
 
 /**
