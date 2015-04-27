@@ -18,6 +18,7 @@
 #include "detect_data_store.h"
 #include "misc.h"
 #include "rtc_driver.h"
+#include "status_leds.h"
 
 // Set to zero to keep the radio awake when idle
 #define RADIO_SLEEP_IDLE 0
@@ -168,7 +169,8 @@ void proto_run(void)
  */
 void proto_triggerupload(void)
 {
-    proto_state = PROTO_SEND;
+	status_led_set(STATUS_GREEN, true);
+	proto_state = PROTO_SEND;
     // This will exit the interrupt handler into proto_run and stuff will happen
 }
 
@@ -184,6 +186,7 @@ static void _proto_endcleanup(void)
 #endif
 
     proto_state = PROTO_IDLE;
+	status_led_set(STATUS_GREEN, false);
 }
 
 /**

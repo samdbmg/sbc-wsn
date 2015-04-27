@@ -24,6 +24,7 @@
 #include "detect_data_store.h"
 #include "ext_sensor.h"
 #include "radio_protocol.h"
+#include "status_leds.h"
 
 /* Functions used only in this file */
 static void clocks_init(void);
@@ -37,8 +38,10 @@ int main(void)
 
     clocks_init();
 
-    // Set up the error LED as an output line
-    GPIO_PinModeSet(gpioPortC, 10, gpioModePushPull, 0);
+    // Configure interrupts to show LED status, light green to show
+    // startup running
+    status_init();
+    status_led_set(STATUS_YELLOW, true);
 
     // Configure the delay function
     misc_delay_init();
@@ -46,7 +49,13 @@ int main(void)
     // Initialise the radio chip
     if (!radio_init(NODE_ADDR, proto_incoming_packet))
     {
-        GPIO_PinOutSet(gpioPortC, 10);
+    	status_led_set(STATUS_RED, true);
+    	status_illuminate(true);
+
+    	while (true)
+    	{
+
+    	}
     }
 
     // Configure the detection algorithm
@@ -59,13 +68,16 @@ int main(void)
     ext_init();
 
     // Prep radio for receive
-    //radio_powerstate(true);
-    //radio_receive_activate(true);
+    radio_powerstate(true);
+    radio_receive_activate(true);
 
     // Start the RTC (it will be set when the radio protocol kicks in)
-    //rtc_init();
-    //proto_run();
+    rtc_init();
+    proto_run();
     //proto_triggerupload();
+
+    // Kill LED, startup complete
+    status_led_set(STATUS_YELLOW, false);
 
     // Remain in sleep mode unless woken by interrupt
     while (true)

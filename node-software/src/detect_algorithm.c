@@ -20,6 +20,7 @@
 #include "misc.h"
 #include "power_management.h"
 #include "detect_data_store.h"
+#include "status_leds.h"
 
 /* Functions used only in this file */
 static void _detect_timer_config(void);
@@ -157,6 +158,7 @@ void TIMER0_IRQHandler(void)
     // If we're in the last stage of female detection, timeout means success
     if (detect_state == DETECT_LOW_F)
     {
+    	status_led_set(STATUS_YELLOW, true);
     	store_call(true);
     	call_count = 0;
     	_detect_reset_to_idle();
@@ -290,6 +292,7 @@ void ACMP0_IRQHandler(void)
         	{
         		// We came in too early so it's probably a new detect. Save the old, start again
         		store_call(false);
+        		status_led_set(STATUS_YELLOW, true);
         		_detect_start_new();
         	}
         	else
@@ -323,6 +326,7 @@ void ACMP0_IRQHandler(void)
         	// If we got a click here it wasn't a female, another call started.
         	// Save the old one
         	store_call(false);
+        	status_led_set(STATUS_YELLOW, true);
 
         	// Reset as if we'd seen the new call
         	_detect_start_new();
@@ -416,6 +420,7 @@ static void _detect_reset_to_idle(void)
     // Mark a detection if we got enough
     if (call_count >= DETECT_MINCOUNT)
     {
+    	status_led_set(STATUS_YELLOW, true);
         store_call(false);
     }
 
@@ -429,4 +434,5 @@ static void _detect_reset_to_idle(void)
 
     // Mark we're ready to go to sleep
     power_set_minimum(PWR_DETECT, PWR_EM3);
+    status_led_set(STATUS_YELLOW, false);
 }
