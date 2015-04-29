@@ -15,6 +15,7 @@
 #include "radio_shared_types.h"
 #include "printf.h"
 #include "power_management.h"
+#include "base_misc.h"
 
 #include "tm_stm32f4_fatfs.h"
 
@@ -178,6 +179,9 @@ void proto_run(void)
 
             if (repeat_index > 0)
             {
+                // Delay for far end to enter receieve
+                misc_delay(1000, true);
+
                 repeat_index--;
 
                 // Set seq number to repeat
@@ -203,6 +207,9 @@ void proto_run(void)
             {
                 // We now have the full packet, so ACK it
                 packet_data[0] = PKT_ACK;
+
+                // Delay for far end to enter receive
+                misc_delay(1000, true);
 
                 radio_send_data(packet_data, 2, source_node);
 

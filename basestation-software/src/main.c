@@ -40,11 +40,6 @@ void main(void)
 
     misc_delay_init();
 
-    modem_setup();
-    modem_connection(true);
-    modem_gettime();
-
-
     // Configure the radio
     if (!radio_init(0xFF, proto_incoming_packet))
     {
