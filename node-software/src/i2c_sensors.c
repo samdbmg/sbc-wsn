@@ -151,9 +151,9 @@ uint16_t sensors_read(sensor_type_t type)
             // Prepare to read the status register
             _sens_tx_buffer[0] = 0x93;
 
-            // Wait for conversion completion
-            bool avalid = false;
-            while (!avalid)
+            // Wait for conversion completion or timeout
+            uint8_t attempts = 0;
+            while (attempts++ < 3)
             {
                 misc_delay(30, true);
 
@@ -161,7 +161,7 @@ uint16_t sensors_read(sensor_type_t type)
 
                 if (_sens_rx_buffer[0] & 0x01)
                 {
-                    avalid = true;
+                    attempts = 3;
                 }
             }
 

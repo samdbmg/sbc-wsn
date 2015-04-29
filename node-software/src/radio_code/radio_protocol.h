@@ -5,7 +5,7 @@
 #ifndef RADIO_PROTOCOL_H_
 #define RADIO_PROTOCOL_H_
 
-typedef enum {PROTO_SETUP, PROTO_IDLE, PROTO_SEND, PROTO_WAITACK} proto_radio_state_t;
+typedef enum {PROTO_SETUP, PROTO_BEACON, PROTO_IDLE, PROTO_SEND, PROTO_WAITACK, PROTO_WAITBEACON} proto_radio_state_t;
 
 #define BASE_ADDR 0xFF
 

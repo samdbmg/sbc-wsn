@@ -17,15 +17,15 @@
 #include "misc.h"
 #include "power_management.h"
 
-#define STATUS_RED_GPIO gpioPortC
-#define STATUS_RED_PIN 9
-#define STATUS_YELLOW_GPIO gpioPortC
-#define STATUS_YELLOW_PIN 10
-#define STATUS_GREEN_GPIO gpioPortC
-#define STATUS_GREEN_PIN 11
+#define STATUS_RED_GPIO gpioPortF
+#define STATUS_RED_PIN 5
+#define STATUS_YELLOW_GPIO gpioPortF
+#define STATUS_YELLOW_PIN 4
+#define STATUS_GREEN_GPIO gpioPortF
+#define STATUS_GREEN_PIN 3
 
 #define STATUS_BUTTON_GPIO gpioPortC
-#define STATUS_BUTTON_PIN 8
+#define STATUS_BUTTON_PIN 9
 
 #define STATUS_ILLUMINATE_FLAG 0x80
 
@@ -41,7 +41,7 @@ void status_init(void)
     GPIO_PinModeSet(STATUS_BUTTON_GPIO, STATUS_BUTTON_PIN, gpioModeInputPull, 1);
     GPIO_IntConfig(STATUS_BUTTON_GPIO, STATUS_BUTTON_PIN, true, true, true);
 
-    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+    NVIC_EnableIRQ(GPIO_ODD_IRQn);
 
     // Force illumination if button is pushed (low)
     if (!GPIO_PinInGet(STATUS_BUTTON_GPIO, STATUS_BUTTON_PIN))
@@ -75,10 +75,10 @@ void status_led_set(uint8_t led, bool state)
 }
 
 /**
- * Handle the incoming switch setting. Note that this is all even pins, but the
- * only other GPIO interrupt is radios on PB11
+ * Handle the incoming switch setting. Note that this is odd even pins, but the
+ * only other GPIO interrupt is radios on PA2
  */
-void GPIO_EVEN_IRQHandler(void)
+void GPIO_ODD_IRQHandler(void)
 {
 	// Check the rising edge was on the right pin
     if (GPIO_IntGet() & (0x1 << STATUS_BUTTON_PIN))

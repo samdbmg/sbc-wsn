@@ -59,17 +59,17 @@ void radio_spi_init(void)
     // Pin setup
     GPIO_PinModeSet(gpioPortD, 6, gpioModeInput, 0);     // MISO
     GPIO_PinModeSet(gpioPortD, 7, gpioModePushPull, 0);  // MOSI
-    GPIO_PinModeSet(gpioPortC, 14, gpioModePushPull, 0); // CS
+    GPIO_PinModeSet(gpioPortC, 4, gpioModePushPull, 0); // CS
     GPIO_PinModeSet(gpioPortC, 15, gpioModePushPull, 0); // CLK
 
     // Set NSS high
     radio_spi_select(false);
 
     // Configure the pin change interrupt for DIO0
-    GPIO_PinModeSet(gpioPortB, 11, gpioModeInput, 0);
-    GPIO_IntConfig(gpioPortB, 11, true, false, true);
+    GPIO_PinModeSet(gpioPortA, 2, gpioModeInput, 0);
+    GPIO_IntConfig(gpioPortA, 2, true, false, true);
 
-    NVIC_EnableIRQ(GPIO_ODD_IRQn);
+    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
 
 }
 
@@ -102,11 +102,11 @@ void radio_spi_select(bool select)
 {
     if (select)
     {
-        GPIO_PinOutClear(gpioPortC, 14);
+        GPIO_PinOutClear(gpioPortC, 4);
     }
     else
     {
-        GPIO_PinOutSet(gpioPortC, 14);
+        GPIO_PinOutSet(gpioPortC, 4);
     }
 }
 
@@ -148,10 +148,10 @@ void radio_spi_prepinterrupt(uint8_t interrupt)
 /**
  * Handle an incoming edge on PB11, the radio interrupt pin
  */
-void GPIO_ODD_IRQHandler(void)
+void GPIO_EVEN_IRQHandler(void)
 {
     // Check the rising edge was on the right pin
-    if ((GPIO_IntGet() & (0x1 << 11)) && GPIO_PinInGet(gpioPortB, 11))
+    if ((GPIO_IntGet() & (0x1 << 2)) && GPIO_PinInGet(gpioPortA, 2))
     {
         switch(interrupt_state)
         {
@@ -172,8 +172,8 @@ void GPIO_ODD_IRQHandler(void)
     }
 
     // Clear the interrupt, even if it wasn't port B
-    if (GPIO_IntGet() & (0x1 << 11))
+    if (GPIO_IntGet() & (0x1 << 2))
     {
-        GPIO_IntClear(0x1 << 11);
+        GPIO_IntClear(0x1 << 2);
     }
 }

@@ -13,6 +13,7 @@
 #include "radio_protocol.h"
 #include "radio_control.h"
 #include "radio_shared_types.h"
+#include "radio_schedule_settings.h"
 #include "power_management.h"
 #include "i2c_sensors.h"
 #include "detect_data_store.h"
@@ -67,7 +68,7 @@ void proto_incoming_packet(uint16_t bytes)
             uint16_t timestamp = data[2];
             timestamp |= data[3] << 8;
 
-            rtc_set_time(timestamp);
+            rtc_set_time(timestamp, data[4] & 0x01);
             break;
         }
         case PKT_REPEAT:
@@ -110,6 +111,26 @@ void proto_incoming_packet(uint16_t bytes)
 
             break;
         }
+        case PKT_BEACONACK:
+        {
+        	// Packet should be [time(16)],[period(16)],[nextwake(16)],[options(8)]
+
+        	uint32_t time_now = data[0] << 8 | data[1];
+        	rtc_set_time(time_now, (data[6] & 0x01));
+
+        	uint32_t period = data[2] << 8 | data[3];
+        	period |= (data[6] & 0x02) << 15;
+
+        	uint32_t next_wake = data[2] << 8 | data[3];
+        	next_wake |= (data[6] & 0x02) << 14;
+
+        	rtc_set_schedule(period, next_wake);
+
+        	proto_state = PROTO_IDLE;
+        	_proto_endcleanup();
+
+        	break;
+        }
         default:
             // Ignore an unknown packet
             break;
@@ -126,6 +147,8 @@ void proto_run(void)
     {
         case PROTO_SEND:
         {
+            radio_receive_activate(true);
+
             // Send the data
             _proto_uploaddata();
 
@@ -149,11 +172,46 @@ void proto_run(void)
         }
         case PROTO_SETUP:
         {
-            // TODO Work out how to make it keep sending pulses (RTC trick?)
+        	proto_state = PROTO_IDLE;
 
-            // For now go straight to idle
-            proto_state = PROTO_IDLE;
+        	// Set the RTC up to send beacon frames
+        	rtc_set_time(0, 0);
+        	rtc_set_schedule(RSCHED_BEACONPERIOD, 1);
 
+            break;
+        }
+        case PROTO_BEACON:
+        {
+        	// Prepare a beacon frame
+        	packet_data[0] = 1;
+        	packet_data[1] = 1;
+        	packet_data[2] = PKT_BEACON;
+
+        	// Send the beacon frame
+        	radio_send_data(packet_data, 3, BASE_ADDR);
+
+        	// Wait for the response
+        	proto_state = PROTO_WAITBEACON;
+            misc_delay(RADIO_TIMEOUT, false);
+
+        	break;
+        }
+        case PROTO_WAITBEACON:
+        {
+            if (!misc_delay_active())
+            {
+                // Timer's ended, let's assume we didn't get an ACK,
+                // go back to sleep
+
+#if RADIO_SLEEP_IDLE
+            	radio_powerstate(false);
+#endif
+
+                proto_state = PROTO_SETUP;
+            	status_led_set(STATUS_GREEN, true);
+            }
+            // If timer is still active, spurious wake from something else,
+            // ignore.
             break;
         }
         case PROTO_IDLE:
@@ -169,8 +227,17 @@ void proto_run(void)
  */
 void proto_triggerupload(void)
 {
-	status_led_set(STATUS_GREEN, true);
-	proto_state = PROTO_SEND;
+	status_led_set(STATUS_GREEN, false);
+
+	if (proto_state == PROTO_SETUP)
+	{
+		// In setup mode we prepare to send a beacon frame
+		proto_state = PROTO_BEACON;
+	}
+	else
+	{
+		proto_state = PROTO_SEND;
+	}
     // This will exit the interrupt handler into proto_run and stuff will happen
 }
 
@@ -182,8 +249,6 @@ void proto_triggerupload(void)
 uint8_t proto_read_address(void)
 {
 	// Enable all the address pins
-	GPIO_PinModeSet(gpioPortC, 8, gpioModeInputPull, 1);
-	GPIO_PinModeSet(gpioPortC, 9, gpioModeInputPull, 1);
 	GPIO_PinModeSet(gpioPortC, 10, gpioModeInputPull, 1);
 	GPIO_PinModeSet(gpioPortC, 11, gpioModeInputPull, 1);
 	GPIO_PinModeSet(gpioPortC, 13, gpioModeInputPull, 1);
@@ -199,8 +264,6 @@ uint8_t proto_read_address(void)
 	addr_bits |= GPIO_PinInGet(gpioPortD, 6);
 
 	// Disable all the address pins
-	GPIO_PinModeSet(gpioPortC, 8, gpioModeDisabled, 0);
-	GPIO_PinModeSet(gpioPortC, 9, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 10, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 11, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 13, gpioModeDisabled, 0);
@@ -218,13 +281,14 @@ uint8_t proto_read_address(void)
 static void _proto_endcleanup(void)
 {
     store_clear(datastore_end);
+    //radio_receive_activate(false);
 
 #if RADIO_SLEEP_IDLE
     radio_powerstate(false);
 #endif
 
     proto_state = PROTO_IDLE;
-	status_led_set(STATUS_GREEN, false);
+	status_led_set(STATUS_GREEN, true);
 }
 
 /**

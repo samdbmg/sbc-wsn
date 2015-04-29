@@ -17,13 +17,11 @@
 #include "power_management.h"
 #include "radio_protocol.h"
 
-#define RTC_OSC_FREQ             (32768)
 #define RTC_OSC_PSC_VAL          (32768)
-#define RTC_TICK_RATE            (RTC_OSC_FREQ / RTC_OSC_PSC_VAL)
-#define RTC_WAKE_INTERVAL        (10)
-#define RTC_TIMEOUT_INTERVAL     (60)
-#define RTC_COUNT_BEFORE_WAKEUP  (RTC_TICK_RATE* RTC_WAKE_INTERVAL)
-#define RTC_COUNT_BEFORE_TIMEOUT (RTC_TICK_RATE * RTC_TIMEOUT_INTERVAL)
+#define RTC_TIMEOUT_INTERVAL     (86400)
+#define RTC_COUNT_BEFORE_TIMEOUT (86400)
+
+static uint32_t rtc_wake_period = RTC_COUNT_BEFORE_TIMEOUT;
 
 /**
  * Configure and start the real time counter
@@ -37,7 +35,7 @@ void rtc_init(void)
     CMU_ClockDivSet(cmuClock_RTC, RTC_OSC_PSC_VAL);
 
     // Set compare match value for RTC
-    RTC_CompareSet(1, RTC_COUNT_BEFORE_WAKEUP);
+    RTC_CompareSet(1, rtc_wake_period);
 
     // Set top value
     RTC_CompareSet(0, RTC_COUNT_BEFORE_TIMEOUT);
@@ -70,17 +68,31 @@ bool rtc_get_time_16(uint16_t* time_p)
 /**
  * Set the current real time clock value in seconds
  * @param timestamp Current time from upstream
+ * @param msb	    Most significant bit (stored elsewhere)
  */
-void rtc_set_time(uint16_t timestamp)
+void rtc_set_time(uint16_t timestamp, uint8_t msb)
 {
     RTC_Enable(false);
-    RTC->CNT = (uint32_t) timestamp;
+    RTC->CNT = (uint32_t) timestamp | ((uint32_t) msb << 16);
     RTC_Enable(true);
 
     // Calculate the next interrupt (and adjust for crossing midnight)
-    uint32_t new_compare = RTC_CounterGet() + RTC_COUNT_BEFORE_WAKEUP;
+    uint32_t new_compare = RTC_CounterGet() + rtc_wake_period;
     new_compare %= RTC_COUNT_BEFORE_TIMEOUT;
     RTC_CompareSet(1, new_compare);
+}
+
+/**
+ * Adjust the schedule for next wakeup. This should be called after
+ * time has been set!
+ *
+ * @param period    Period between wakeups
+ * @param next_wake Absolute time value at which to next wake
+ */
+void rtc_set_schedule(uint32_t period, uint32_t next_wake)
+{
+	rtc_wake_period = period;
+	RTC_CompareSet(1, next_wake);
 }
 
 /**
@@ -92,7 +104,7 @@ void RTC_IRQHandler(void)
     {
         // Hourly interrupt fired, calculate the next hour interrupt (and adjust
         // for crossing midnight with a mod)
-        uint32_t new_compare = RTC_CompareGet(1) + RTC_COUNT_BEFORE_WAKEUP;
+        uint32_t new_compare = RTC_CompareGet(1) + rtc_wake_period;
         new_compare %= RTC_COUNT_BEFORE_TIMEOUT;
         RTC_CompareSet(1, new_compare);
 

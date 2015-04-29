@@ -115,8 +115,8 @@ static void _detect_comparator_config(void)
 
     ACMP_Init(ACMP0, &acmp_settings);
 
-    // Set the negative input as channel 1, positive as channel 0
-    ACMP_ChannelSet(ACMP0, acmpChannel1, acmpChannel0);
+    // Set the negative input as channel 2, positive as channel 3
+    ACMP_ChannelSet(ACMP0, acmpChannel2, acmpChannel3);
 
     // Wait for comparator to finish starting up
     while (!(ACMP0->STATUS & ACMP_STATUS_ACMPACT))

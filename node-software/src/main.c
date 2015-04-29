@@ -67,17 +67,16 @@ int main(void)
     // Configure external sensor interface
     ext_init();
 
-    // Prep radio for receive
-    radio_powerstate(true);
-    radio_receive_activate(true);
-
     // Start the RTC (it will be set when the radio protocol kicks in)
     rtc_init();
     proto_run();
+
+    radio_powerstate(true);
     //proto_triggerupload();
 
-    // Kill LED, startup complete
+    // Kill LED, set green (all good), startup complete
     status_led_set(STATUS_YELLOW, false);
+    status_led_set(STATUS_GREEN, true);
 
     // Remain in sleep mode unless woken by interrupt
     while (true)
@@ -91,6 +90,8 @@ int main(void)
 static void clocks_init(void)
 {
     CMU_HFRCOBandSet(cmuHFRCOBand_21MHz);
+	//CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
+	//CMU->CTRL = (CMU->CTRL & ~_CMU_CTRL_HFXOBOOST_MASK) | CMU_CTRL_HFXOBOOST_50PCENT;
 
     // Low energy module clock supply
     CMU_ClockEnable(cmuClock_CORELE, true);
@@ -98,6 +99,7 @@ static void clocks_init(void)
     // Start the LFRCO (Low Freq RC Oscillator) and wait for it to stabilise
     // The ULFRCO uses less power, but is much less accurate!
     CMU_OscillatorEnable(cmuOsc_LFRCO, true, true);
+    CMU->CTRL = (CMU->CTRL & ~_CMU_CTRL_LFXOBOOST_MASK) | CMU_CTRL_LFXOBOOST_70PCENT;
 
     // Assign the LFRCO to LF clock A and B domains (RTC, LEUART)
     CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFRCO);
