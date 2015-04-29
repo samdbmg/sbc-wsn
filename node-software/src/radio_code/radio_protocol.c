@@ -115,14 +115,14 @@ void proto_incoming_packet(uint16_t bytes)
         {
         	// Packet should be [time(16)],[period(16)],[nextwake(16)],[options(8)]
 
-        	uint32_t time_now = data[0] << 8 | data[1];
-        	rtc_set_time(time_now, (data[6] & 0x01));
+        	uint32_t time_now = data[1] << 8 | data[2];
+        	rtc_set_time(time_now, (data[7] & 0x01));
 
-        	uint32_t period = data[2] << 8 | data[3];
-        	period |= (data[6] & 0x02) << 15;
+        	uint32_t period = data[3] << 8 | data[4];
+        	period |= (data[7] & 0x02) << 15;
 
-        	uint32_t next_wake = data[2] << 8 | data[3];
-        	next_wake |= (data[6] & 0x02) << 14;
+        	uint32_t next_wake = data[5] << 8 | data[6];
+        	next_wake |= (data[7] & 0x02) << 14;
 
         	rtc_set_schedule(period, next_wake);
 

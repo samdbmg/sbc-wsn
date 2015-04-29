@@ -83,7 +83,8 @@ void power_sleep(void)
         else
         {
             // No subsystems have requested a power mode, go to stop mode
-            PWR_EnterSTOPMode(PWR_LowPowerRegulator_ON, PWR_STOPEntry_WFI);
+            //PWR_EnterSTOPMode(PWR_LowPowerRegulator_ON, PWR_STOPEntry_WFI);
+            __WFI();
 
             // Restart the HSE and wait for startup
             RCC_HSEConfig(RCC_HSE_ON);

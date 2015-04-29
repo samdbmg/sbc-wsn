@@ -16,6 +16,7 @@
 #include "printf.h"
 #include "gsm_modem.h"
 #include "base_misc.h"
+#include "rtc_driver.h"
 
 #define DEBUG_ENABLE 1
 
@@ -55,13 +56,14 @@ void main(void)
     }
 
     proto_init();
+    rtc_init();
+
+    rtc_set(2,59,55,0,0,0);
+
+    while(1);
 
     // Set up for receive
-    printf("Sending test packet, waiting for RX\r\n");
     radio_powerstate(true);
-    uint8_t radio_clock_set_test[] = {0x01, 0x20, 0x00};
-    radio_send_data(radio_clock_set_test, sizeof(radio_clock_set_test), 0x01);
-    proto_start_rec();
 
     printf("Startup done. Sleeping\r\n");
 
@@ -69,6 +71,6 @@ void main(void)
     while (1)
     {
         proto_run();
-        power_sleep();
+        //power_sleep();
     }
 }
