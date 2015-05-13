@@ -72,7 +72,6 @@ int main(void)
     proto_run();
 
     radio_powerstate(true);
-    //proto_triggerupload();
 
     // Kill LED, set green (all good), startup complete
     status_led_set(STATUS_YELLOW, false);
@@ -83,15 +82,12 @@ int main(void)
     {
         proto_run();
         power_sleep();
-        //proto_triggerupload();
     }
 }
 
 static void clocks_init(void)
 {
     CMU_HFRCOBandSet(cmuHFRCOBand_21MHz);
-	//CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
-	//CMU->CTRL = (CMU->CTRL & ~_CMU_CTRL_HFXOBOOST_MASK) | CMU_CTRL_HFXOBOOST_50PCENT;
 
     // Low energy module clock supply
     CMU_ClockEnable(cmuClock_CORELE, true);

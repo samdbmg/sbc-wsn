@@ -230,6 +230,8 @@ void proto_run(void)
                 char light[] = "Light Level";
                 char other[] = "Other";
 
+                printf("Data from node %d\r\n", source_node);
+
                 for (uint16_t i = 0; i < incoming_data_pointer; i += 4)
                 {
                     data_struct_t* data = (data_struct_t*)(incoming_data_array + i);

@@ -3,4 +3,5 @@
 /src/radio_code/radio_config.h
 /src/radio_code/radio_control.h
 /src/radio_code/radio_control.c
+/src/radio_code/radio_schedule_settings.h
 /src/radio_code/radio_shared_types.h

@@ -22,7 +22,7 @@
 #include "status_leds.h"
 
 // Set to zero to keep the radio awake when idle
-#define RADIO_SLEEP_IDLE 0
+#define RADIO_SLEEP_IDLE 1
 
 #define RADIO_TIMEOUT 3000
 
