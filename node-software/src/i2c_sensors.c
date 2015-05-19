@@ -12,6 +12,7 @@
 #include "em_chip.h"
 #include "em_gpio.h"
 #include "em_i2c.h"
+#include "printf.h"
 
 /* Application-specific headers */
 #include "i2c_sensors.h"
@@ -52,6 +53,7 @@ static volatile bool _sens_i2c_active = false;
 void sensors_init(void)
 {
     CMU_ClockEnable(cmuClock_I2C0, true);
+    power_set_minimum(PWR_SENSOR, PWR_EM2);
 
     I2C_Init_TypeDef const i2cInit =
     {
@@ -96,12 +98,13 @@ void sensors_init(void)
 
     // Power down until needed
     CMU_ClockEnable(cmuClock_I2C0, false);
+    power_set_minimum(PWR_SENSOR, PWR_EM3);
 
 }
 
 uint16_t sensors_read(sensor_type_t type)
 {
-    power_set_minimum(PWR_SENSOR, PWR_EM3);
+    power_set_minimum(PWR_SENSOR, PWR_EM2);
     CMU_ClockEnable(cmuClock_I2C0, true);
 
     uint16_t result;
@@ -214,6 +217,8 @@ static void _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
 
     // Actually start sending commands
     I2C_TransferInit(I2C0, &_sens_transfer);
+
+    misc_delay(1, true);
 
     // Wait for transfer completion
     while (_sens_i2c_active)
