@@ -20,6 +20,7 @@
 #include "misc.h"
 #include "rtc_driver.h"
 #include "status_leds.h"
+#include "printf.h"
 
 // Set to zero to keep the radio awake when idle
 #define RADIO_SLEEP_IDLE 1
@@ -82,6 +83,8 @@ void proto_incoming_packet(uint16_t bytes)
             // Fourth should be sequence to repeat
             packet_data[1] = data[3];
 
+            printf("Repeat request for %d of %d\r\n", data[3], data[2]);
+
             uint8_t packet_len;
 
             if (data[2] == data[3])
@@ -109,11 +112,14 @@ void proto_incoming_packet(uint16_t bytes)
             // Finish up
             _proto_endcleanup();
 
+            printf("Got ACK\r\n");
+
             break;
         }
         case PKT_BEACONACK:
         {
         	// Packet should be [time(16)],[period(16)],[nextwake(16)],[options(8)]
+        	printf("Got BEACONACK...");
 
         	uint32_t time_now = data[0] << 8 | data[1];
         	rtc_set_time(time_now, (data[6] & 0x01));
@@ -128,6 +134,8 @@ void proto_incoming_packet(uint16_t bytes)
 
         	proto_state = PROTO_IDLE;
         	_proto_endcleanup();
+
+        	printf("setup complete\r\n");
 
         	break;
         }
@@ -165,6 +173,8 @@ void proto_run(void)
                 // Timer's ended, let's assume we didn't get an ACK,
                 // clear store and go back to sleep
                 _proto_endcleanup();
+
+                printf("No ACK, timed out\r\n");
             }
             // If timer is still active, spurious wake from something else,
             // ignore.
@@ -296,6 +306,8 @@ static void _proto_endcleanup(void)
  */
 static void _proto_uploaddata(void)
 {
+	printf("Beginning data upload...");
+
     // Measure environment
     store_other(DATA_TEMP, (uint8_t)sensors_read(SENS_TEMP));
     store_other(DATA_HUMID, (uint8_t)sensors_read(SENS_HUMID));
@@ -341,4 +353,6 @@ static void _proto_uploaddata(void)
     store_get_data(&(packet_data[2]), packet_len, data_pointer);
 
     radio_send_data(packet_data, packet_len + 2, BASE_ADDR);
+
+    printf("done\r\n");
 }
