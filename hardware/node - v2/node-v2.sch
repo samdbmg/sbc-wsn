@@ -9194,7 +9194,7 @@ grid 2.54 mm</description>
 <part name="U2" library="TICustom" deviceset="LMV551_DBV_5" device=""/>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
 <part name="R7" library="resistor" deviceset="R-EU_" device="0204/7" value="330k"/>
-<part name="C2" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="10n"/>
+<part name="C2" library="SparkFun-Capacitors" deviceset="CAP" device="PTH" value="1u"/>
 <part name="C3" library="SparkFun-Capacitors" deviceset="CAP_POL" device="PTH2" value="10u"/>
 <part name="P+4" library="supply1" deviceset="VCC/2" device=""/>
 <part name="U$1" library="FullyCustom" deviceset="PIEZO" device="WIREHEADER"/>
