@@ -7,7 +7,7 @@
 
 typedef enum {SENS_TEMP, SENS_HUMID, SENS_LIGHT} sensor_type_t;
 
-void sensors_init(void);
+bool sensors_init(void);
 
 uint16_t sensors_read(sensor_type_t sensor);
 

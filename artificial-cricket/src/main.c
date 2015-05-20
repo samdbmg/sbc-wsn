@@ -26,7 +26,7 @@
 #define INITIAL_CLICK_COUNT 7
 
 // Generate a female response after this many (set to zero to disable)
-#define FEMALE_RESPONSE_PERIOD 1
+#define FEMALE_RESPONSE_PERIOD 0
 #define FEMALE_RESPONSE_DELAY_MS 25
 
 // Set to zero to disable serial data output

@@ -25,6 +25,7 @@
 #include "ext_sensor.h"
 #include "radio_protocol.h"
 #include "status_leds.h"
+#include "printf.h"
 
 /* Functions used only in this file */
 static void clocks_init(void);
@@ -38,10 +39,18 @@ int main(void)
 
     clocks_init();
 
-    // Configure interrupts to show LED status, light green to show
+    // Configure interrupts to show LED status, light yellow to show
     // startup running
     status_init();
     status_led_set(STATUS_YELLOW, true);
+
+    // Configure external sensor interface and debugging
+    ext_init();
+
+    // Announce startup on debug interface
+    printf("\r\n\r\n\r\n");
+    printf("==============\r\n");
+    printf("Starting up...\r\n");
 
     // Configure the delay function
     misc_delay_init();
@@ -52,29 +61,39 @@ int main(void)
     	status_led_set(STATUS_RED, true);
     	status_illuminate(true);
 
+    	printf("Radio setup fails...\r\n");
+
     	while (true)
     	{
 
     	}
     }
 
+    printf("Radio ready\r\n");
+
     // Configure the detection algorithm
     detect_init();
 
-    // Configure sensors
-    sensors_init();
+    printf("Detection ready\r\n");
 
-    // Configure external sensor interface
-    ext_init();
+    // Configure sensors
+    if (!sensors_init())
+    {
+    	printf("Sensor setup fails...\r\n");
+    }
+    else
+    {
+    	printf("Sensors ready\r\n");
+    }
 
     // Start the RTC (it will be set when the radio protocol kicks in)
     rtc_init();
     proto_run();
 
     radio_powerstate(true);
-    //proto_triggerupload();
 
     // Kill LED, set green (all good), startup complete
+    printf("RTC ready.\r\nStartup complete\r\n\r\n");
     status_led_set(STATUS_YELLOW, false);
     status_led_set(STATUS_GREEN, true);
 
@@ -83,15 +102,12 @@ int main(void)
     {
         proto_run();
         power_sleep();
-        //proto_triggerupload();
     }
 }
 
 static void clocks_init(void)
 {
     CMU_HFRCOBandSet(cmuHFRCOBand_21MHz);
-	//CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
-	//CMU->CTRL = (CMU->CTRL & ~_CMU_CTRL_HFXOBOOST_MASK) | CMU_CTRL_HFXOBOOST_50PCENT;
 
     // Low energy module clock supply
     CMU_ClockEnable(cmuClock_CORELE, true);

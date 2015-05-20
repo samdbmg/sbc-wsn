@@ -21,11 +21,13 @@
 #include "power_management.h"
 #include "detect_data_store.h"
 #include "status_leds.h"
+#include "printf.h"
 
 /* Functions used only in this file */
 static void _detect_timer_config(void);
 static void _detect_comparator_config(void);
 static void _detect_reset_to_idle(void);
+static void _detect_reset_state(void);
 static void _detect_transient_handler(void);
 static void _detect_start_new(void);
 
@@ -115,8 +117,9 @@ static void _detect_comparator_config(void)
 
     ACMP_Init(ACMP0, &acmp_settings);
 
-    // Set the negative input as channel 2, positive as channel 3
-    ACMP_ChannelSet(ACMP0, acmpChannel2, acmpChannel3);
+    // Set the negative input as channel 3 (DETECT_REF),
+    // positive as channel 2 (DETECT_OUT)
+    ACMP_ChannelSet(ACMP0, acmpChannel3, acmpChannel2);
 
     // Wait for comparator to finish starting up
     while (!(ACMP0->STATUS & ACMP_STATUS_ACMPACT))
@@ -160,6 +163,7 @@ void TIMER0_IRQHandler(void)
     {
     	status_led_set(STATUS_YELLOW, true);
     	store_call(true);
+    	printf("Detect hit (and female) with %d clicks", call_count);
     	call_count = 0;
     	_detect_reset_to_idle();
     }
@@ -292,7 +296,9 @@ void ACMP0_IRQHandler(void)
         	{
         		// We came in too early so it's probably a new detect. Save the old, start again
         		store_call(false);
+        		printf("Detect hit with %d clicks", call_count);
         		status_led_set(STATUS_YELLOW, true);
+        		_detect_reset_state();
         		_detect_start_new();
         	}
         	else
@@ -326,9 +332,11 @@ void ACMP0_IRQHandler(void)
         	// If we got a click here it wasn't a female, another call started.
         	// Save the old one
         	store_call(false);
+        	printf("Detect hit with %d clicks", call_count);
         	status_led_set(STATUS_YELLOW, true);
 
         	// Reset as if we'd seen the new call
+        	_detect_reset_state();
         	_detect_start_new();
 
         	call_count++;
@@ -357,18 +365,6 @@ void ACMP0_IRQHandler(void)
 static void _detect_start_new(void)
 {
 	detect_state = DETECT_HIGH;
-
-#ifdef DETECT_DEBUG_ON
-
-    for (uint8_t i = 0; i < 16; i++)
-    {
-        debug_data_array[i] = 0;
-    }
-#endif
-
-    // Reset counter
-    call_count = 0;
-    transient_count = 0;
 
 	// Set edge trigger to fire on a falling edge
 	ACMP0->CTRL &= ~ACMP_CTRL_IRISE;
@@ -405,6 +401,28 @@ static void _detect_transient_handler(void)
 }
 
 /**
+ * Resets internal algorithm state ready for a new detection, without
+ * affecting timers etc
+ */
+static void _detect_reset_state(void)
+{
+#ifdef DETECT_DEBUG_ON
+	// Print out and clear the array
+	printf("Detect debug: ");
+    for (uint8_t i = 0; i < 16; i++)
+    {
+    	printf("%d, ", debug_data_array[i]);
+        debug_data_array[i] = 0;
+    }
+    printf("\r\n");
+#endif
+
+    // Reset counter
+    call_count = 0;
+    transient_count = 0;
+}
+
+/**
  * Clear the timers and reset detection back to the default state
  */
 static void _detect_reset_to_idle(void)
@@ -422,6 +440,8 @@ static void _detect_reset_to_idle(void)
     {
     	status_led_set(STATUS_YELLOW, true);
         store_call(false);
+
+        printf("Detect hit with %d clicks", call_count);
     }
 
     // Set edge trigger to fire on a rising edge
@@ -429,8 +449,7 @@ static void _detect_reset_to_idle(void)
     ACMP0->CTRL |= ACMP_CTRL_IRISE;
 
     // Reset state
-    call_count = 0;
-    detect_state = DETECT_IDLE;
+    _detect_reset_state();
 
     // Mark we're ready to go to sleep
     power_set_minimum(PWR_DETECT, PWR_EM3);

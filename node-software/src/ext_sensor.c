@@ -32,7 +32,7 @@ void ext_init(void)
 
     LEUART_Init_TypeDef leuartInit =
     {
-            .enable = leuartEnableRx,
+            .enable = leuartEnableRx | leuartEnableTx,
             .refFreq = 0,
             .baudrate = 9600,
             .databits = leuartDatabits8,
@@ -44,15 +44,30 @@ void ext_init(void)
     LEUART_Init(LEUART0, &leuartInit);
 
     // Select pins used
-    LEUART0->ROUTE = LEUART_ROUTE_RXPEN | LEUART_ROUTE_LOCATION_LOC0;
+    LEUART0->ROUTE = LEUART_ROUTE_RXPEN | LEUART_ROUTE_TXPEN | LEUART_ROUTE_LOCATION_LOC0;
 
     // Run GPIO config for pins used
     GPIO_PinModeSet(gpioPortD, 5, gpioModeInputPull, 1); // RX
-    //GPIO_PinModeSet(gpioPortD, 4, gpioModePushPull, 0); // TX
+    GPIO_PinModeSet(gpioPortD, 4, gpioModePushPull, 0); // TX
 
     // Activate the LEUART interrupts
     NVIC_EnableIRQ(LEUART0_IRQn);
     LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV);
+}
+
+/**
+ * Print a single character on the serial interface, used by printf()
+ *
+ * @param c Character to print
+ */
+void putchar(char c)
+{
+	LEUART_Tx(LEUART0, c);
+
+	while (!(LEUART0->STATUS & LEUART_STATUS_TXC))
+	{
+		// Wait for TX completion
+	}
 }
 
 /**
