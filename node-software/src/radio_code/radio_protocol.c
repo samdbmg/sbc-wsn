@@ -183,6 +183,7 @@ void proto_run(void)
         case PROTO_SETUP:
         {
         	proto_state = PROTO_IDLE;
+        	printf("*Skipping proto schedule init for debugging*\r\n");
 
         	// Set the RTC up to send beacon frames
         	rtc_set_time(0, 0);
@@ -192,6 +193,8 @@ void proto_run(void)
         }
         case PROTO_BEACON:
         {
+        	printf("Sending a beacon frame...");
+
         	// Prepare a beacon frame
         	packet_data[0] = 1;
         	packet_data[1] = 1;
@@ -219,6 +222,7 @@ void proto_run(void)
 
                 proto_state = PROTO_SETUP;
             	status_led_set(STATUS_GREEN, true);
+            	printf("no beacon response\r\n");
             }
             // If timer is still active, spurious wake from something else,
             // ignore.
