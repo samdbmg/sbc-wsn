@@ -77,9 +77,14 @@ int main(void)
     printf("Detection ready\r\n");
 
     // Configure sensors
-    sensors_init();
-
-    printf("Sensors ready\r\n");
+    if (!sensors_init())
+    {
+    	printf("Sensor setup fails...\r\n");
+    }
+    else
+    {
+    	printf("Sensors ready\r\n");
+    }
 
     // Start the RTC (it will be set when the radio protocol kicks in)
     rtc_init();

@@ -22,7 +22,7 @@
 #define SENS_TEMP_ADDR 0x40
 #define SENS_LIGHT_ADDR 0x29
 
-static void _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
+static bool _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
         uint8_t rxlen);
 
 // Create some storage for I2C transfers
@@ -49,8 +49,10 @@ static volatile bool _sens_i2c_active = false;
 
 /**
  * Configure the sensors and interface
+ *
+ * @return True on success, false on timeout
  */
-void sensors_init(void)
+bool sensors_init(void)
 {
     CMU_ClockEnable(cmuClock_I2C0, true);
     power_set_minimum(PWR_SENSOR, PWR_EM2);
@@ -84,21 +86,32 @@ void sensors_init(void)
     _sens_tx_buffer[0] = 0xA0;
     _sens_tx_buffer[1] = 0x01;
     _sens_tx_buffer[2] = 0xF6;
-    _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 3, 0);
+    if (!(_sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 3, 0)))
+	{
+    	return false;
+	}
 
     // And 4x gain
     _sens_tx_buffer[0] = 0x8F;
     _sens_tx_buffer[1] = 0x01;
-    _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0);
+    if (!(_sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0)))
+	{
+    	return false;
+	}
 
     // And put it back to sleep
     _sens_tx_buffer[0] = 0x80;
     _sens_tx_buffer[1] = 0x00;
-    _sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0);
+    if (!(_sensors_send(SENS_LIGHT_ADDR, I2C_FLAG_WRITE, 2, 0)))
+	{
+    	return false;
+	}
 
     // Power down until needed
     CMU_ClockEnable(cmuClock_I2C0, false);
     power_set_minimum(PWR_SENSOR, PWR_EM3);
+
+    return true;
 
 }
 
@@ -202,8 +215,9 @@ uint16_t sensors_read(sensor_type_t type)
  * @param flags I2C_FLAG_x flags
  * @param txlen Number of bytes from TX buffer to write
  * @param rxlen Number of bytes to read into RX buffer
+ * @return		False if command timed out
  */
-static void _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
+static bool _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
         uint8_t rxlen)
 {
     // Configure transfer parameters
@@ -218,13 +232,25 @@ static void _sensors_send(uint8_t addr, uint16_t flags, uint8_t txlen,
     // Actually start sending commands
     I2C_TransferInit(I2C0, &_sens_transfer);
 
+    // Delay before attempting wait
     misc_delay(1, true);
+
+    // Set a non-blocking delay as a timeout
+    misc_delay(250, false);
 
     // Wait for transfer completion
     while (_sens_i2c_active)
     {
         power_sleep();
+
+        if (!misc_delay_active())
+        {
+        	// Timer ran out, exit with failure
+        	return false;
+        }
     }
+
+    return true;
 }
 
 /**
