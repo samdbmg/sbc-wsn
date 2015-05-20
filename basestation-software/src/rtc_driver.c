@@ -30,8 +30,15 @@ void RTC_Alarm_IRQHandler(void);
  */
 void rtc_init(void)
 {
+    // Power up the RTC and enable access
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
     PWR_BackupAccessCmd(ENABLE);
+
+    // Reset it
+    RCC_BackupResetCmd(ENABLE);
+    RCC_BackupResetCmd(DISABLE);
+
+    // Start the clock
     RCC_LSICmd(ENABLE);
     while (RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET)
     {
@@ -52,6 +59,20 @@ void rtc_init(void)
     };
     RTC_Init(&rtcInit);
 
+    // Set the RTC for now
+    rtc_set(3, 0, 0, 2015, 5, 15);
+
+    // Enable alarm EXTI
+    EXTI_ClearITPendingBit(EXTI_Line17);
+    EXTI_InitTypeDef extiInit =
+    {
+            .EXTI_Line = EXTI_Line17,
+            .EXTI_Mode = EXTI_Mode_Interrupt,
+            .EXTI_Trigger = EXTI_Trigger_Rising,
+            .EXTI_LineCmd = ENABLE
+    };
+    EXTI_Init(&extiInit);
+
     // Configure alarm B to wake at MODEM_WAKEUP_HOUR (3AM?)
     RTC_TimeTypeDef rtcBAlarmTime =
     {
@@ -60,27 +81,32 @@ void rtc_init(void)
             .RTC_Seconds = 0
     };
 
-    RTC_AlarmTypeDef rtcBAlarmInit =
-    {
-            .RTC_AlarmDateWeekDay = 0,
-            .RTC_AlarmDateWeekDaySel = RTC_AlarmDateWeekDaySel_Date,
-            .RTC_AlarmMask = RTC_AlarmMask_None, // Alarm on all days
-            .RTC_AlarmTime = rtcBAlarmTime
-    };
-
-    RTC_SetAlarm(RTC_Format_BIN, RTC_Alarm_B, &rtcBAlarmInit);
-    RTC_AlarmCmd(RTC_Alarm_B, ENABLE);
-    RTC_ITConfig(RTC_IT_ALRB, ENABLE);
-    RTC_ClearFlag(RTC_IT_ALRB);
-
     NVIC_InitTypeDef nvicInit =
     {
             .NVIC_IRQChannel = RTC_Alarm_IRQn,
             .NVIC_IRQChannelPreemptionPriority = 0,
-            .NVIC_IRQChannelSubPriority = 1,
+            .NVIC_IRQChannelSubPriority = 0,
             .NVIC_IRQChannelCmd = ENABLE
     };
     NVIC_Init(&nvicInit);
+
+    RTC_AlarmTypeDef rtcBAlarmInit =
+    {
+            .RTC_AlarmDateWeekDay = RTC_Weekday_Monday,
+            .RTC_AlarmDateWeekDaySel = RTC_AlarmDateWeekDaySel_Date,
+            .RTC_AlarmMask = RTC_AlarmMask_All, // Alarm on all days
+            .RTC_AlarmTime.RTC_Hours = 3,
+            .RTC_AlarmTime.RTC_Minutes = 0,
+            .RTC_AlarmTime.RTC_Seconds = 5
+    };
+    //TODO Do we really want bin here?
+    RTC_SetAlarm(RTC_Format_BIN, RTC_Alarm_B, &rtcBAlarmInit);
+
+    RTC_AlarmCmd(RTC_Alarm_B, ENABLE);
+    RTC_ITConfig(RTC_IT_ALRB, ENABLE);
+    RTC_ClearFlag(RTC_IT_ALRB);
+
+
 }
 
 /**
@@ -98,6 +124,7 @@ void rtc_set(uint8_t hour, uint8_t minute, uint8_t second, uint8_t year,
 {
     RTC_TimeTypeDef rtcTimeInit =
     {
+            .RTC_H12 = RTC_H12_AM,
             .RTC_Hours = hour,
             .RTC_Minutes = minute,
             .RTC_Seconds = second
