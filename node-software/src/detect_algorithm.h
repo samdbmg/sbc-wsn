@@ -5,7 +5,7 @@
 #define DETECT_ALGORITHM_H_
 
 /* Enable algorithm debug mode (uses more memory and time) */
-#define DETECT_DEBUG_ON        1
+//#define DETECT_DEBUG_ON        1
 
 /* Algorithm configuration */
 #define DETECT_PSC             16
