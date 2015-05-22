@@ -81,7 +81,7 @@ void radio_spi_init(void)
     GPIO_InitTypeDef gpioIntInit =
     {
             .GPIO_Mode = GPIO_Mode_IN,
-            .GPIO_Pin = GPIO_Pin_8,
+            .GPIO_Pin = GPIO_Pin_3,
             .GPIO_PuPd = GPIO_PuPd_NOPULL,
             .GPIO_Speed = GPIO_Speed_25MHz
     };

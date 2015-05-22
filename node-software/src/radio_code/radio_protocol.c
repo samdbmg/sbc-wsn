@@ -317,12 +317,6 @@ static void _proto_uploaddata(void)
     store_other(DATA_HUMID, (uint8_t)sensors_read(SENS_HUMID));
     store_other(DATA_LIGHT, (uint8_t)sensors_read(SENS_LIGHT));
 
-    // Now go generate enough data to keep us busy
-    for (uint8_t i = 0; i < 50; i++)
-    {
-        store_other(DATA_OTHER, i);
-    }
-
     // Compute how many packets need to be sent (bytes in store by bytes in a
     // packet after overheads)
     uint8_t packet_count = (store_get_size() / RADIO_MAX_DATA_LEN) + 1;

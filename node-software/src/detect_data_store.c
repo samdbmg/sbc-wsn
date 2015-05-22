@@ -18,10 +18,18 @@ uint16_t data_read_index = 0;
 /**
  * Store a cricket call at the current time
  * @param female True if a female call was suspected
+ * @param clicks How many clicks were received
  */
-void store_call(bool female)
+void store_call(bool female, uint8_t clicks)
 {
-    store_other(DATA_CALL, (female ? DATA_FLG_FEM : 0x0));
+	if (female)
+	{
+		store_other(DATA_CALL, DATA_FLG_FEM | clicks);
+	}
+	else
+	{
+		store_other(DATA_CALL, clicks);
+	}
 }
 
 /**

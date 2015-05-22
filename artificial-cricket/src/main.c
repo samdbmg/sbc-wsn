@@ -26,7 +26,7 @@
 #define INITIAL_CLICK_COUNT 7
 
 // Generate a female response after this many (set to zero to disable)
-#define FEMALE_RESPONSE_PERIOD 0
+#define FEMALE_RESPONSE_PERIOD 5
 #define FEMALE_RESPONSE_DELAY_MS 25
 
 // Set to zero to disable serial data output
@@ -51,7 +51,7 @@ static volatile uint8_t g_clicks_progress;
 static uint8_t g_calls_sent = 0;
 
 // Initial call timer value
-static const uint32_t g_initial_call_timer = 1000;
+static const uint32_t g_initial_call_timer = 5000;
 
 static int8_t g_female_wait = FEMALE_RESPONSE_PERIOD - 1;
 
@@ -121,8 +121,8 @@ void EXTI0_IRQHandler(void)
 
     if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0))
     {
-        // Trigger a call immediately
-        generate_call();
+        // Shortcut the call timer
+        TIM_SetCounter(TIM2, TIM2->ARR - 1);
 
         EXTI_ClearITPendingBit(EXTI_Line0);
     }
@@ -154,9 +154,9 @@ static void generate_call(void)
             call_timer_female(true);
 
             // Set the flag to mark we're waiting on a female call
-            g_female_wait = -1;
+            g_female_wait = -3;
         }
-        else if (g_female_wait == -1)
+        else if (g_female_wait == -3)
         {
             // This call should be a female response, so set the timer back
             call_timer_female(false);
@@ -174,7 +174,7 @@ static void generate_call(void)
     }
 
     // Randomly adjust all the parameters
-    if (RANDOM_ENABLE && g_female_wait != -1)
+    if (RANDOM_ENABLE && g_female_wait != -3)
     {
         // Overall call timer
         TIM2->ARR = (uint32_t)random_percentage_adjust(10, 25, (int32_t)TIM2->ARR,

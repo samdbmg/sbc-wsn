@@ -103,7 +103,17 @@ void proto_init(void)
     }
 
     // Set us up in beacon mode
-    _proto_endcleanup();
+    // Set up the GPIO pin to power up the SD card
+    GPIO_InitTypeDef gpioInit =
+    {
+            .GPIO_Mode = GPIO_Mode_OUT,
+            .GPIO_OType = GPIO_OType_OD,
+            .GPIO_Pin = GPIO_Pin_4,
+            .GPIO_PuPd = GPIO_PuPd_NOPULL,
+            .GPIO_Speed = GPIO_Speed_50MHz
+    };
+    GPIO_Init(GPIOB, &gpioInit);
+    GPIO_SetBits(GPIOB, 4);
 }
 
 /**
@@ -289,7 +299,22 @@ void proto_run(void)
                     uint32_t timestamp = data->time;
                     timestamp |= (data->type & 0x80) << 9;
 
-                    printf("%d : %s - %d\r\n", timestamp, type, data->otherdata);
+                    if ((data->type & 0x7F) == 0)
+                    {
+                        // Display a different message for calls
+                        printf("%d : %s - %d clicks", timestamp, type, data->otherdata & 0x7F);
+
+                        if (data->otherdata & 0x80)
+                        {
+                            // Got a female
+                            printf(" and female");
+                        }
+                        printf("\r\n");
+                    }
+                    else
+                    {
+                        printf("%d : %s - %d\r\n", timestamp, type, data->otherdata);
+                    }
                 }
                 printf("Data done. \r\n");
 
@@ -344,6 +369,9 @@ static void _proto_savedata(void)
 {
     FATFS filesystem;
     FIL data_file;
+
+    // Power up the card
+    GPIO_ResetBits(GPIOB, 4);
 
     // Mark that we're using GPIOD so the GSM module doesn't shut it down
     power_gpiod_use_count++;
@@ -412,6 +440,9 @@ static void _proto_savedata(void)
     {
         RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, DISABLE);
     }
+
+    // Power down the card
+    GPIO_SetBits(GPIOB, 4);
 }
 
 /**

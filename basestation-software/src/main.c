@@ -64,6 +64,7 @@ void main(void)
 
     // Set up for receive
     radio_powerstate(true);
+    proto_start_rec();
 
     printf("Startup done. Sleeping\r\n");
 
@@ -71,6 +72,6 @@ void main(void)
     while (1)
     {
         proto_run();
-        //power_sleep();
+        power_sleep();
     }
 }
