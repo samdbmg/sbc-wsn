@@ -26,7 +26,7 @@
 #define INITIAL_CLICK_COUNT 7
 
 // Generate a female response after this many (set to zero to disable)
-#define FEMALE_RESPONSE_PERIOD 10
+#define FEMALE_RESPONSE_PERIOD 5
 #define FEMALE_RESPONSE_DELAY_MS 25
 
 // Set to zero to disable serial data output
@@ -121,8 +121,8 @@ void EXTI0_IRQHandler(void)
 
     if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0))
     {
-        // Trigger a call immediately
-        generate_call();
+        // Shortcut the call timer
+        TIM_SetCounter(TIM2, TIM2->ARR - 1);
 
         EXTI_ClearITPendingBit(EXTI_Line0);
     }
