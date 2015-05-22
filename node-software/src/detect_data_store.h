@@ -9,7 +9,7 @@
 #include "radio_shared_types.h"
 
 // Detect flags
-#define DATA_FLG_FEM (1 << 7) // Marks a probable female call was heard
+#define DATA_FLG_FEM 0x80 // Marks a probable female call was heard
 
 void store_call(bool female, uint8_t clicks);
 void store_other(data_type_t data_type, uint8_t data);

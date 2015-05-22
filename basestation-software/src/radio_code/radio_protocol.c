@@ -258,7 +258,22 @@ void proto_run(void)
                     uint32_t timestamp = data->time;
                     timestamp |= (data->type & 0x80) << 9;
 
-                    printf("%d : %s - %d\r\n", timestamp, type, data->otherdata);
+                    if ((data->type & 0x7F) == 0)
+                    {
+                        // Display a different message for calls
+                        printf("%d : %s - %d clicks", timestamp, type, data->otherdata & 0x7F);
+
+                        if (data->otherdata & 0x80)
+                        {
+                            // Got a female
+                            printf(" and female");
+                        }
+                        printf("\r\n");
+                    }
+                    else
+                    {
+                        printf("%d : %s - %d\r\n", timestamp, type, data->otherdata);
+                    }
                 }
                 printf("Data done. \r\n");
 
