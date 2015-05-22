@@ -57,10 +57,6 @@ void main(void)
     proto_init();
 
     // Set up for receive
-    printf("Sending test packet, waiting for RX\r\n");
-    radio_powerstate(true);
-    uint8_t radio_clock_set_test[] = {0x01, 0x20, 0x00};
-    radio_send_data(radio_clock_set_test, sizeof(radio_clock_set_test), 0x01);
     proto_start_rec();
 
     printf("Startup done. Sleeping\r\n");
