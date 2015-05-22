@@ -162,7 +162,7 @@ void TIMER0_IRQHandler(void)
     if (detect_state == DETECT_LOW_F)
     {
     	status_led_set(STATUS_YELLOW, true);
-    	store_call(true);
+    	store_call(true, call_count);
     	printf("Detect hit (and female) with %d clicks\r\n", call_count);
     	call_count = 0;
     	_detect_reset_to_idle();
@@ -329,11 +329,12 @@ void ACMP0_IRQHandler(void)
 #endif
         	// If we got a click here it wasn't a female, another call started.
         	// Save the old one
-        	store_call(false);
+        	store_call(false, call_count);
         	printf("Detect hit with %d clicks\r\n", call_count);
         	status_led_set(STATUS_YELLOW, true);
 
         	// Reset as if we'd seen the new call
+        	TIMER_Enable(TIMER0, false);
         	_detect_reset_state();
         	_detect_start_new();
 
@@ -442,7 +443,7 @@ static void _detect_reset_to_idle(void)
     if (call_count >= DETECT_MINCOUNT)
     {
     	status_led_set(STATUS_YELLOW, true);
-        store_call(false);
+        store_call(false, call_count);
 
         printf("Detect hit with %d clicks\r\n", call_count);
     }
