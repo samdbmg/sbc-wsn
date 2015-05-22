@@ -50,6 +50,9 @@ bool radio_init(uint8_t addr, void (*callback)(uint16_t))
     // Enable and configure SPI
     radio_spi_init();
 
+    // Wait for supply to stabilise
+    misc_delay(100, true);
+
     // Write a value to the sync register, then read it to check communications
     _radio_write_register(RADIO_REG_SYNCA, 0x13);
 
