@@ -59,6 +59,18 @@ void modem_setup(void)
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
+    // Set up the GPIO pin to power up the SD card
+    GPIO_InitTypeDef gpioInit =
+    {
+            .GPIO_Mode = GPIO_Mode_OUT,
+            .GPIO_OType = GPIO_OType_OD,
+            .GPIO_Pin = GPIO_Pin_3,
+            .GPIO_PuPd = GPIO_PuPd_NOPULL,
+            .GPIO_Speed = GPIO_Speed_50MHz
+    };
+    GPIO_Init(GPIOD, &gpioInit);
+    GPIO_ResetBits(GPIOD, 3);
+
     // Set the IO pins to AF mode
     GPIO_InitTypeDef gpioAFInit =
     {
@@ -99,7 +111,7 @@ void modem_setup(void)
     NVIC_Init(&nvicInit);
 
     // Configure the reset pin
-    GPIO_InitTypeDef gpioInit =
+    GPIO_InitTypeDef pwrgpioInit =
     {
             .GPIO_Mode = GPIO_Mode_OUT,
             .GPIO_OType = GPIO_OType_PP,
@@ -107,7 +119,7 @@ void modem_setup(void)
             .GPIO_PuPd = GPIO_PuPd_NOPULL,
             .GPIO_Speed = GPIO_Speed_25MHz
     };
-    GPIO_Init(GPIOD, &gpioInit);
+    GPIO_Init(GPIOD, &pwrgpioInit);
 
     uint8_t config_attempts = 5;
     while (config_attempts-- > 1)
@@ -186,6 +198,9 @@ void modem_shutdown(void)
 
     // Allow clockstop
     power_set_minimum(PWR_MODEM, PWR_CLOCKSTOP);
+
+    // Power down
+    GPIO_SetBits(GPIOD, 3);
 }
 
 /**

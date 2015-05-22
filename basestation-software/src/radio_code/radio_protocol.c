@@ -79,6 +79,18 @@ void proto_init(void)
 
     // Power down the timer until needed
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, DISABLE);
+
+    // Set up the GPIO pin to power up the SD card
+    GPIO_InitTypeDef gpioInit =
+    {
+            .GPIO_Mode = GPIO_Mode_OUT,
+            .GPIO_OType = GPIO_OType_OD,
+            .GPIO_Pin = GPIO_Pin_4,
+            .GPIO_PuPd = GPIO_PuPd_NOPULL,
+            .GPIO_Speed = GPIO_Speed_50MHz
+    };
+    GPIO_Init(GPIOB, &gpioInit);
+    GPIO_SetBits(GPIOB, 4);
 }
 
 /**
@@ -305,6 +317,9 @@ static void proto_savedata(void)
     FATFS filesystem;
     FIL data_file;
 
+    // Power up the card
+    GPIO_ResetBits(GPIOB, 4);
+
     // Mark that we're using GPIOD so the GSM module doesn't shut it down
     power_gpiod_use_count++;
 
@@ -372,6 +387,9 @@ static void proto_savedata(void)
     {
         RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, DISABLE);
     }
+
+    // Power down the card
+    GPIO_SetBits(GPIOB, 4);
 }
 
 /**
