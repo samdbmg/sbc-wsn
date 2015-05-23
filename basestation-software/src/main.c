@@ -16,6 +16,7 @@
 #include "printf.h"
 #include "gsm_modem.h"
 #include "base_misc.h"
+#include "rtc_driver.h"
 
 #define DEBUG_ENABLE 1
 
@@ -54,10 +55,8 @@ void main(void)
         printf("Radio setup done.\r\n");
     }
 
+    rtc_init();
     proto_init();
-
-    // Set up for receive
-    proto_start_rec();
 
     printf("Startup done. Sleeping\r\n");
 
