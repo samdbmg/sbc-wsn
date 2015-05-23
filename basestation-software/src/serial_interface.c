@@ -39,7 +39,7 @@ void serial_init(void)
     // Configure the USART
     USART_InitTypeDef usartInit =
     {
-            .USART_BaudRate = 19200,
+            .USART_BaudRate = 9600,
             .USART_HardwareFlowControl = USART_HardwareFlowControl_None,
             .USART_Mode = USART_Mode_Rx | USART_Mode_Tx,
             .USART_Parity = USART_Parity_No,

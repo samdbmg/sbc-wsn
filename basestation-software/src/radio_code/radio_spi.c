@@ -198,12 +198,10 @@ void EXTI3_IRQHandler(void)
             case RADIO_INT_TXDONE:
                 // A transmission finished, clear the flag
                 interrupt_state = RADIO_INT_NONE;
-                printf("Got TX wake\r\n");
                 break;
             case RADIO_INT_RXREADY:
                 // Payload data is waiting to be read
                 power_schedule(_radio_payload_ready);
-                printf("Got RX wake\r\n");
                 break;
             default:
                 // We're not listening for an interrupt, ignore
@@ -215,5 +213,4 @@ void EXTI3_IRQHandler(void)
     {
         printf("Got different pin\r\n");
     }
-    printf("Got radio wake\r\n");
 }
