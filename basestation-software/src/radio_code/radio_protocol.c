@@ -84,6 +84,8 @@ void proto_init(void)
 
     // Enable the overflow interrupt
     TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+    TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+    NVIC_ClearPendingIRQ(TIM2_IRQn);
 
     // Enable the timer's interrupts in the interrupt controller
     NVIC_InitTypeDef timer_nvic_init;
@@ -200,6 +202,10 @@ void proto_start_rec(void)
 
     // Enable, set and start the timer
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+    TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+    NVIC_ClearPendingIRQ(TIM2_IRQn);
+    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+    TIM_SetCounter(TIM2, 0);
     TIM_SetAutoreload(TIM2, PROTO_INITIAL_TIMEOUT_MS);
     TIM_Cmd(TIM2, ENABLE);
 
@@ -301,10 +307,17 @@ void proto_run(void)
                     uint32_t timestamp = data->time;
                     timestamp |= (data->type & 0x80) << 9;
 
+                    uint8_t hours = timestamp / 3600;
+                    timestamp -= hours * 3600;
+                    uint8_t minutes = timestamp / 60;
+                    timestamp -= minutes * 60;
+                    uint8_t seconds = timestamp;
+
                     if ((data->type & 0x7F) == 0)
                     {
                         // Display a different message for calls
-                        printf("%d : %s - %d clicks", timestamp, type, data->otherdata & 0x7F);
+                        printf("%02d:%02d:%02d : %s - %d clicks", hours, minutes,
+                                seconds, type, data->otherdata & 0x7F);
 
                         if (data->otherdata & 0x80)
                         {
@@ -315,7 +328,8 @@ void proto_run(void)
                     }
                     else
                     {
-                        printf("%d : %s - %d\r\n", timestamp, type, data->otherdata);
+                        printf("%02d:%02d:%02d : %s - %d\r\n", hours, minutes,
+                                seconds, type, data->otherdata);
                     }
                 }
                 printf("Data done. \r\n");
@@ -403,7 +417,12 @@ static void _proto_savedata(void)
     }
 
     // Try to open/create today's file for append
-    if (f_open(&data_file, "0:testfile.csv",
+    char date[20];
+    char filename[60];
+    rtc_get_date_string(date);
+    sprintf(filename, "0:SBC-WSN-DATA-%s.csv", date);
+
+    if (f_open(&data_file, filename,
             FA_OPEN_ALWAYS | FA_READ | FA_WRITE) == FR_OK)
     {
         // Opening the file succeeded, now seek to the end
@@ -420,16 +439,23 @@ static void _proto_savedata(void)
             timestamp |= (data->type & 0x80) << 9;
             data->type &= 0x7F;
 
+            // Split time up
+            uint8_t hours = timestamp / 3600;
+            timestamp -= hours * 3600;
+            uint8_t minutes = timestamp / 60;
+            timestamp -= minutes * 60;
+            uint8_t seconds = timestamp;
+
             // Write out a CSV style line
             // Columns: NodeID, Time, Type, Other
-            f_printf(&data_file, "%d, %d, %d, %d\n", source_node, timestamp,
-                    data->type, data->otherdata);
+            f_printf(&data_file, "%d, %02d:%02d:%02d, %d, %d\n", source_node, hours,
+                    minutes, seconds, data->type, data->otherdata);
         }
 
         // Close file
         f_close(&data_file);
 
-        printf("Data written to SD card - %d lines", incoming_data_pointer/4);
+        printf("Data written to SD card - %d lines\r\n", incoming_data_pointer/4);
     }
 
     // Finally unmount the card (mounting 0x0 triggers unmount)
@@ -456,59 +482,60 @@ static void _proto_savedata(void)
  */
 void TIM2_IRQHandler(void)
 {
-    switch (proto_state)
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET && TIM2->CNT == TIM2->ARR)
     {
-        case PROTO_AWAKE:
+        switch (proto_state)
         {
-            // We didn't get anything from this node. Assume its dead, de-register
-            schedule_entries[current_schedule_point].retry_count++;
-
-            if (schedule_entries[current_schedule_point].retry_count > RSCHED_MAX_RETRIES)
+            case PROTO_AWAKE:
             {
-                // De-register the node
-                printf("Unregistering node %d\r\n", current_schedule_point);
+                // We didn't get anything from this node. Assume its dead, de-register
+                schedule_entries[current_schedule_point].retry_count++;
 
-                schedule_entries[current_schedule_point].node_id = 0xFF;
+                if (schedule_entries[current_schedule_point].retry_count > RSCHED_MAX_RETRIES)
+                {
+                    // De-register the node
+                    printf("Unregistering node %d\r\n", schedule_entries[current_schedule_point].node_id);
+
+                    schedule_entries[current_schedule_point].node_id = 0xFF;
+                }
+
+                _proto_endcleanup();
+
+                break;
             }
-
-            _proto_endcleanup();
-
-            printf("Node quiet, ignoring\r\n");
-
-            break;
-        }
-        case PROTO_RECV:
-        {
-            // Looks like the last packets were dropped! Mark for repeat
-            while (++last_seq_number <= seq_size)
+            case PROTO_RECV:
             {
-                seq_to_repeat[repeat_index++] = last_seq_number;
+                // Looks like the last packets were dropped! Mark for repeat
+                while (++last_seq_number <= seq_size)
+                {
+                    seq_to_repeat[repeat_index++] = last_seq_number;
+                }
+
+                proto_state = PROTO_ARQ;
+
+                TIM_Cmd(TIM2, DISABLE);
+                printf("Timer ran out, last packets lost\r\n");
+
+                break;
             }
+            case PROTO_ARQ:
+            case PROTO_REPEATING:
+            {
+                // Well that's gone well. Call the whole thing off?
+                printf("Abandoning waiting for packet\r\n");
 
-            proto_state = PROTO_ARQ;
+                _proto_endcleanup();
 
-            TIM_Cmd(TIM2, DISABLE);
-            printf("Timer ran out, last packets lost\r\n");
-
-            break;
+                break;
+            }
+            default:
+                // Do nothing
+                printf("How did we get in state %d\r\n", proto_state);
+                break;
         }
-        case PROTO_ARQ:
-        case PROTO_REPEATING:
-        {
-            // Well that's gone well. Call the whole thing off?
-            printf("Abandoning waiting for packet\r\n");
 
-            _proto_endcleanup();
-
-            break;
-        }
-        default:
-            // Do nothing
-            printf("WTF did we get in state %d\r\n", proto_state);
-            break;
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
-
-    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 }
 
 /**
@@ -590,7 +617,7 @@ static void _proto_register_node(void)
     uint32_t timenow = rtc_get_time_of_day();
     uint32_t period = RSCHED_NODE_PERIOD;
 
-    pkt_data[1] = PKT_BEACONACK;
+    pkt_data[0] = PKT_BEACONACK;
 
     pkt_data[1] = (timenow & 0xFF00) >> 8;
     pkt_data[2] = (timenow & 0xFF);
@@ -603,6 +630,9 @@ static void _proto_register_node(void)
     pkt_data[5] = (nextwake & 0xFF00) >> 8;
     pkt_data[6] = (nextwake & 0xFF);
     pkt_data[7] |= (nextwake & 0x10000) >> 14;
+
+    // Delay for far end to enter receive
+    misc_delay(1000, true);
 
     radio_send_data(pkt_data, 8, node_id);
 }

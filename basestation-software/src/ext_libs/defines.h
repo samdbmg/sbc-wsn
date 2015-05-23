@@ -31,6 +31,6 @@
 /* Put your global defines for all libraries here used in your project */
 
 /* Activate SDIO 1-bit mode */
-#define FATFS_SDIO_4BIT         0
+#define FATFS_SDIO_4BIT         1
 
 #endif

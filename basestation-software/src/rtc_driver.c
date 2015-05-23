@@ -62,7 +62,7 @@ void rtc_init(void)
     RTC_BypassShadowCmd(ENABLE);
 
     // Set the RTC for now
-    rtc_set(3, 0, 0, 15, 5, 15);
+    rtc_set(0, 0, 0, 15, 1, 1);
     // Enable alarm EXTI
     EXTI_ClearITPendingBit(EXTI_Line17);
     EXTI_InitTypeDef extiInit =
@@ -170,6 +170,19 @@ uint32_t rtc_get_time_of_day(void)
     total_seconds += currentTime.RTC_Hours * 3600u;
 
     return total_seconds;
+}
+
+/**
+ * Return a string containing the date
+ * @param date Pointer to a string for date in YY-MM-DD form
+ */
+void rtc_get_date_string(char* date)
+{
+    RTC_DateTypeDef currentDate;
+    RTC_GetDate(RTC_Format_BIN, &currentDate);
+
+    sprintf(date, "%02d-%02d-%02d", currentDate.RTC_Year, currentDate.RTC_Month,
+            currentDate.RTC_Date);
 }
 
 /**
