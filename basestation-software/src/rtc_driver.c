@@ -59,9 +59,10 @@ void rtc_init(void)
     };
     RTC_Init(&rtcInit);
 
-    // Set the RTC for now
-    rtc_set(3, 0, 0, 2015, 5, 15);
+    RTC_BypassShadowCmd(ENABLE);
 
+    // Set the RTC for now
+    rtc_set(3, 0, 0, 15, 5, 15);
     // Enable alarm EXTI
     EXTI_ClearITPendingBit(EXTI_Line17);
     EXTI_InitTypeDef extiInit =
@@ -74,13 +75,6 @@ void rtc_init(void)
     EXTI_Init(&extiInit);
 
     // Configure alarm B to wake at MODEM_WAKEUP_HOUR (3AM?)
-    RTC_TimeTypeDef rtcBAlarmTime =
-    {
-            .RTC_Hours = 3,
-            .RTC_Minutes = 0,
-            .RTC_Seconds = 0
-    };
-
     NVIC_InitTypeDef nvicInit =
     {
             .NVIC_IRQChannel = RTC_Alarm_IRQn,
@@ -94,17 +88,21 @@ void rtc_init(void)
     {
             .RTC_AlarmDateWeekDay = RTC_Weekday_Monday,
             .RTC_AlarmDateWeekDaySel = RTC_AlarmDateWeekDaySel_Date,
-            .RTC_AlarmMask = RTC_AlarmMask_All, // Alarm on all days
-            .RTC_AlarmTime.RTC_Hours = 3,
-            .RTC_AlarmTime.RTC_Minutes = 0,
-            .RTC_AlarmTime.RTC_Seconds = 5
+            .RTC_AlarmMask = RTC_AlarmMask_DateWeekDay, // Alarm on all days
+            .RTC_AlarmTime =
+            {
+                    .RTC_Hours = 3,
+                    .RTC_Minutes = 0,
+                    .RTC_Seconds = 10
+            }
     };
     //TODO Do we really want bin here?
     RTC_SetAlarm(RTC_Format_BIN, RTC_Alarm_B, &rtcBAlarmInit);
 
     RTC_AlarmCmd(RTC_Alarm_B, ENABLE);
     RTC_ITConfig(RTC_IT_ALRB, ENABLE);
-    RTC_ClearFlag(RTC_IT_ALRB);
+    RTC_ClearITPendingBit(RTC_IT_ALRA);
+    RTC_ClearITPendingBit(RTC_IT_ALRB);
 
 
 }
@@ -139,6 +137,23 @@ void rtc_set(uint8_t hour, uint8_t minute, uint8_t second, uint8_t year,
 
     RTC_SetTime(RTC_Format_BIN, &rtcTimeInit);
     RTC_SetDate(RTC_Format_BIN, &rtcDateInit);
+
+    RTC_WaitForSynchro();
+
+    // Wait for RTC to update
+    bool time_sync_complete = false;
+    RTC_TimeTypeDef time_match;
+    while (!time_sync_complete)
+    {
+        RTC_GetTime(RTC_Format_BIN, &time_match);
+
+        if (time_match.RTC_Hours == rtcTimeInit.RTC_Hours &&
+                time_match.RTC_Minutes == rtcTimeInit.RTC_Minutes &&
+                time_match.RTC_Seconds == rtcTimeInit.RTC_Seconds)
+        {
+            time_sync_complete = true;
+        }
+    }
 }
 
 /**
@@ -151,8 +166,8 @@ uint32_t rtc_get_time_of_day(void)
     RTC_GetTime(RTC_Format_BIN, &currentTime);
 
     uint32_t total_seconds = currentTime.RTC_Seconds;
-    total_seconds += currentTime.RTC_Minutes * 60;
-    total_seconds += currentTime.RTC_Hours * 3600;
+    total_seconds += currentTime.RTC_Minutes * 60u;
+    total_seconds += currentTime.RTC_Hours * 3600u;
 
     return total_seconds;
 }
@@ -168,32 +183,30 @@ void rtc_schedule_callback(void (*fn)(void), uint32_t time)
     cb_func = fn;
 
     // Compute wake time
-    uint8_t hours = time / 3600;
-    time -= hours * 3600;
-    uint8_t minutes = time / 60;
-    time -= minutes * 60;
-    uint8_t seconds = time;
+    uint8_t hours = (uint8_t)(time / 3600u);
+    time -= hours * 3600u;
+    uint8_t minutes = (uint8_t)(time / 60u);
+    time -= minutes * 60u;
+    uint8_t seconds = (uint8_t)time;
 
     // Configure alarm A
-    RTC_TimeTypeDef rtcAlarmTime =
-    {
-            .RTC_Hours = hours,
-            .RTC_Minutes = minutes,
-            .RTC_Seconds = seconds
-    };
-
     RTC_AlarmTypeDef rtcAlarmInit =
     {
             .RTC_AlarmDateWeekDay = 1,
             .RTC_AlarmDateWeekDaySel = RTC_AlarmDateWeekDaySel_Date,
-            .RTC_AlarmMask = RTC_AlarmMask_None, // Alarm on all days
-            .RTC_AlarmTime = rtcAlarmTime
+            .RTC_AlarmMask = RTC_AlarmMask_DateWeekDay, // Alarm on all days
+            .RTC_AlarmTime =
+            {
+                    .RTC_Hours = hours,
+                    .RTC_Minutes = minutes,
+                    .RTC_Seconds = seconds
+            }
     };
 
     RTC_SetAlarm(RTC_Format_BIN, RTC_Alarm_A, &rtcAlarmInit);
+    RTC_ClearITPendingBit(RTC_IT_ALRA);
     RTC_AlarmCmd(RTC_Alarm_A, ENABLE);
     RTC_ITConfig(RTC_IT_ALRA, ENABLE);
-    RTC_ClearFlag(RTC_IT_ALRA);
 }
 
 /**
@@ -203,12 +216,12 @@ void RTC_Alarm_IRQHandler(void)
 {
     if (RTC_GetITStatus(RTC_IT_ALRA) == SET)
     {
-        // Schedule the callback
-        power_schedule(cb_func);
-
         // Cancel the alarm
         RTC_AlarmCmd(RTC_Alarm_A, DISABLE);
         RTC_ClearITPendingBit(RTC_IT_ALRA);
+
+        // Schedule the callback
+        power_schedule(cb_func);
     }
     else if (RTC_GetITStatus(RTC_IT_ALRB) == SET)
     {
@@ -218,5 +231,7 @@ void RTC_Alarm_IRQHandler(void)
         // Clear flag
         RTC_ClearITPendingBit(RTC_IT_ALRB);
     }
+
+    EXTI_ClearITPendingBit(EXTI_Line17);
 }
 

@@ -55,16 +55,8 @@ void main(void)
         printf("Radio setup done.\r\n");
     }
 
-    proto_init();
     rtc_init();
-
-    rtc_set(2,59,55,0,0,0);
-
-    while(1);
-
-    // Set up for receive
-    radio_powerstate(true);
-    proto_start_rec();
+    proto_init();
 
     printf("Startup done. Sleeping\r\n");
 
