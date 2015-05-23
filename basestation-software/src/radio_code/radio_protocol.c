@@ -102,7 +102,9 @@ void proto_init(void)
         schedule_entries[i].node_id = 0xFF;
     }
 
-    // Set us up in beacon mode
+    // Set up to listen for beacon frames
+    proto_togglebeacon();
+
     // Set up the GPIO pin to power up the SD card
     GPIO_InitTypeDef gpioInit =
     {
@@ -348,6 +350,9 @@ void proto_togglebeacon()
         proto_state = PROTO_BEACON;
         radio_receive_activate(true);
         printf("Waiting for beacon frame\r\n");
+
+        // Set to return to sleep
+        rtc_schedule_callback(proto_togglebeacon, rtc_get_time_of_day() + RSCHED_WAKELENGTH);
     }
     else
     {
@@ -356,7 +361,8 @@ void proto_togglebeacon()
 #if RADIO_SLEEP_IDLE
         radio_powerstate(false);
 #endif
-        proto_state = PROTO_IDLE;
+
+        _proto_endcleanup();
 
         printf("Done waiting for beacon frame\r\n");
     }
@@ -523,7 +529,7 @@ static void _proto_endcleanup(void)
 #endif
 
     // Work out when to wake next
-    uint8_t i = current_schedule_point + 1;
+    uint8_t i = current_schedule_point;
     for (; i < RSCHED_MAX_NODES; i++)
     {
         if (schedule_entries[i].node_id != 0xFF)
@@ -532,18 +538,21 @@ static void _proto_endcleanup(void)
         }
     }
 
-    uint32_t timebase = rtc_get_time_of_day() / RSCHED_NODE_PERIOD;
+    // Calculate the time at the start of this period (for example, top of the hour)
+    uint32_t timebase = (rtc_get_time_of_day() / RSCHED_NODE_PERIOD) * RSCHED_NODE_PERIOD;
 
     if (i == RSCHED_MAX_NODES)
     {
-        // We've reached the beacon frame point, schedule that
+        // We've reached the beacon frame point, schedule that (waking ahead of the hour)
         rtc_schedule_callback(proto_togglebeacon, timebase +
                 (RSCHED_NODE_PERIOD - RSCHED_WAKELENGTH));
+        current_schedule_point = 0;
 
     }
     else
     {
         rtc_schedule_callback(proto_start_rec, timebase + (i * RSCHED_TIME_STEP));
+        current_schedule_point = i + 1;
     }
 
 }
@@ -573,25 +582,29 @@ static void _proto_register_node(void)
     uint8_t node_index = _proto_add_to_schedule(node_id);
 
     // Calculate next wakeup time
-    uint32_t nextwake = (rtc_get_time_of_day() / RSCHED_NODE_PERIOD) + node_index * RSCHED_TIME_STEP;
+    uint32_t nextwake = (rtc_get_time_of_day() / RSCHED_NODE_PERIOD) *
+            RSCHED_NODE_PERIOD +
+            node_index * RSCHED_TIME_STEP;
 
     // ACK back to the node [time(16)], [period(16)], [nextwake(16)],[options(8)]
     uint32_t timenow = rtc_get_time_of_day();
     uint32_t period = RSCHED_NODE_PERIOD;
 
-    pkt_data[0] = (timenow & 0xFF00) >> 8;
-    pkt_data[1] = (timenow & 0xFF);
-    pkt_data[6] = (timenow & 0x10000) >> 16;
+    pkt_data[1] = PKT_BEACONACK;
 
-    pkt_data[2] = (period & 0xFF00) >> 8;
-    pkt_data[3] = (period & 0xFF);
-    pkt_data[6] |= (period & 0x10000) >> 15;
+    pkt_data[1] = (timenow & 0xFF00) >> 8;
+    pkt_data[2] = (timenow & 0xFF);
+    pkt_data[7] = (timenow & 0x10000) >> 16;
 
-    pkt_data[4] = (nextwake & 0xFF00) >> 8;
-    pkt_data[5] = (nextwake & 0xFF);
-    pkt_data[6] |= (nextwake & 0x10000) >> 14;
+    pkt_data[3] = (period & 0xFF00) >> 8;
+    pkt_data[4] = (period & 0xFF);
+    pkt_data[7] |= (period & 0x10000) >> 15;
 
-    radio_send_data(pkt_data, 7, node_id);
+    pkt_data[5] = (nextwake & 0xFF00) >> 8;
+    pkt_data[6] = (nextwake & 0xFF);
+    pkt_data[7] |= (nextwake & 0x10000) >> 14;
+
+    radio_send_data(pkt_data, 8, node_id);
 }
 
 /**

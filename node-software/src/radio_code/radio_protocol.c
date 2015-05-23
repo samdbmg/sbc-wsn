@@ -26,6 +26,7 @@
 #define RADIO_SLEEP_IDLE 1
 
 #define RADIO_TIMEOUT 3000
+#define RADIO_BEACON_TIMEOUT 3000
 
 // Protocol state store
 static proto_radio_state_t proto_state;
@@ -182,18 +183,25 @@ void proto_run(void)
         }
         case PROTO_SETUP:
         {
-        	proto_state = PROTO_IDLE;
-        	printf("*Skipping proto schedule init for debugging*\r\n");
+        	//proto_state = PROTO_IDLE;
+        	//printf("*Skipping proto schedule init for debugging*\r\n");
 
         	// Set the RTC up to send beacon frames
         	rtc_set_time(0, 0);
         	rtc_set_schedule(RSCHED_BEACONPERIOD, 1);
+
+        	// Also send one now
+        	proto_state = PROTO_BEACON;
 
             break;
         }
         case PROTO_BEACON:
         {
         	printf("Sending a beacon frame...");
+        	status_led_set(STATUS_RED, true);
+
+        	radio_powerstate(true);
+        	radio_receive_activate(true);
 
         	// Prepare a beacon frame
         	packet_data[0] = 1;
@@ -205,7 +213,7 @@ void proto_run(void)
 
         	// Wait for the response
         	proto_state = PROTO_WAITBEACON;
-            misc_delay(RADIO_TIMEOUT, false);
+            misc_delay(RADIO_BEACON_TIMEOUT, false);
 
         	break;
         }
@@ -221,6 +229,7 @@ void proto_run(void)
 #endif
 
                 proto_state = PROTO_SETUP;
+                status_led_set(STATUS_RED, false);
             	status_led_set(STATUS_GREEN, true);
             	printf("no beacon response\r\n");
             }
@@ -241,15 +250,14 @@ void proto_run(void)
  */
 void proto_triggerupload(void)
 {
-	status_led_set(STATUS_GREEN, false);
-
 	if (proto_state == PROTO_SETUP)
 	{
 		// In setup mode we prepare to send a beacon frame
 		proto_state = PROTO_BEACON;
 	}
-	else
+	else if (proto_state == PROTO_IDLE)
 	{
+		status_led_set(STATUS_GREEN, false);
 		proto_state = PROTO_SEND;
 	}
     // This will exit the interrupt handler into proto_run and stuff will happen

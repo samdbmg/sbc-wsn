@@ -6,13 +6,13 @@
 #define RADIO_SCHEDULE_SETTINGS_H_
 
 // Period between sensor node sending beacon frames
-#define RSCHED_BEACONPERIOD 15
+#define RSCHED_BEACONPERIOD 5u
 
 // How long base node will remain awake each time listening for a beacon frame
-#define RSCHED_WAKELENGTH 10
+#define RSCHED_WAKELENGTH 5u
 
 // How often a node should wake up to send data
-#define RSCHED_NODE_PERIOD 30
+#define RSCHED_NODE_PERIOD 30u
 
 // Maximum number of possible nodes
 #define RSCHED_MAX_NODES 20
