@@ -13,20 +13,17 @@
 /* Application-specific headers */
 #include "timer_config.h"
 #include "random_adjust.h"
-#include "user_switch.h"
+#include "user_interface.h"
 #include "serial_interface.h"
 
 // Set this to zero to disable random adjust
 #define RANDOM_ENABLE 1
 
-// Set this to zero to only call on button push
-#define CALL_TIMER_ENABLE 1
-
 // Initial number of clicks per call
 #define INITIAL_CLICK_COUNT 7
 
 // Generate a female response after this many (set to zero to disable)
-#define FEMALE_RESPONSE_PERIOD 5
+#define FEMALE_RESPONSE_PERIOD 100
 #define FEMALE_RESPONSE_DELAY_MS 25
 
 // Set to zero to disable serial data output
@@ -53,7 +50,8 @@ static uint8_t g_calls_sent = 0;
 // Initial call timer value
 static const uint32_t g_initial_call_timer = 5000;
 
-static int8_t g_female_wait = FEMALE_RESPONSE_PERIOD - 1;
+volatile uint8_t g_female_period = FEMALE_RESPONSE_PERIOD;
+volatile int8_t g_female_wait = FEMALE_RESPONSE_PERIOD - 1;
 
 /**
  * Handle mark space timer overflow and compare match to turn pulse on and off
@@ -91,7 +89,7 @@ void TIM4_IRQHandler(void)
         // If we just did a female response, reset to do male calls
         if (g_female_wait == -2)
         {
-            g_female_wait = FEMALE_RESPONSE_PERIOD - 1;
+            g_female_wait = g_female_period - 1;
         }
 
         TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
@@ -121,11 +119,11 @@ void EXTI0_IRQHandler(void)
 
     if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0))
     {
-        // Shortcut the call timer
-        TIM_SetCounter(TIM2, TIM2->ARR - 1);
+        generate_call();
 
-        EXTI_ClearITPendingBit(EXTI_Line0);
     }
+
+    EXTI_ClearITPendingBit(EXTI_Line0);
 }
 
 /**
@@ -146,7 +144,7 @@ static void generate_call(void)
     TIM_Cmd(TIM2, DISABLE);
 
     // Should female responses be considered?
-    if (FEMALE_RESPONSE_PERIOD > 0)
+    if (g_female_period > 0)
     {
         // Should we be generating a female call next time round?
         if (g_female_wait == 0)
@@ -176,10 +174,6 @@ static void generate_call(void)
     // Randomly adjust all the parameters
     if (RANDOM_ENABLE && g_female_wait != -3)
     {
-        // Overall call timer
-        TIM2->ARR = (uint32_t)random_percentage_adjust(10, 25, (int32_t)TIM2->ARR,
-                (int32_t)g_initial_call_timer*1000);
-
         // Number of clicks
         g_clicks_total = (uint8_t)random_percentage_adjust(50, 20,
                 (int32_t)g_clicks_total, INITIAL_CLICK_COUNT);
@@ -228,6 +222,9 @@ void main(void)
     // Enable the randomness generator
     random_init();
 
+    // Enable the ADC channels
+    adc_init();
+
     // Configure the assorted timers
     pwm_timer_setup();
     markspace_timer_setup();
@@ -236,9 +233,7 @@ void main(void)
     serial_init();
 #endif
 
-#if CALL_TIMER_ENABLE
     call_timer_setup(g_initial_call_timer, FEMALE_RESPONSE_DELAY_MS);
-#endif
 
     // Go to sleep. Interrupts will do the rest
     while (1)

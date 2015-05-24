@@ -16,7 +16,7 @@
 /* Application-specific headers */
 #include "timer_config.h"
 
-static uint32_t g_call_period_ms;
+volatile uint32_t g_call_period_ms;
 static uint32_t g_female_period_ms;
 
 /**
@@ -154,6 +154,8 @@ void call_timer_female(bool enable)
     if (enable)
     {
         TIM2->ARR = g_female_period_ms * 1000;
+        TIM_SetCounter(TIM2, 0);
+        TIM_Cmd(TIM2, ENABLE);
     }
     else
     {

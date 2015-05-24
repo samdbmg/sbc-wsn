@@ -13,7 +13,7 @@
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbClientOtherOptions" value=""/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerConnectionAddress" value=""/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerExecutable" value="C:\Apps\openocd-0.8.0\bin\openocd-0.8.0.exe"/>
-<intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerGdbPortNumber" value="3333"/>
+<intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerGdbPortNumber" value="3334"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerLog" value=""/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerOther" value="-f &quot;C:\Apps\openocd-0.8.0\bin\stm32f4.txt&quot;"/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.openocd.gdbServerTelnetPortNumber" value="4444"/>
@@ -27,7 +27,7 @@
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadImage" value="true"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadSymbols" value="true"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.pcRegister" value=""/>
-<intAttribute key="org.eclipse.cdt.debug.gdbjtag.core.portNumber" value="3333"/>
+<intAttribute key="org.eclipse.cdt.debug.gdbjtag.core.portNumber" value="3334"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setPcRegister" value="false"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setResume" value="false"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setStopAt" value="true"/>
