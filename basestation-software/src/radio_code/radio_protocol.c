@@ -611,7 +611,8 @@ static void _proto_register_node(void)
     // Calculate next wakeup time
     uint32_t nextwake = (rtc_get_time_of_day() / RSCHED_NODE_PERIOD) *
             RSCHED_NODE_PERIOD +
-            node_index * RSCHED_TIME_STEP;
+            node_index * RSCHED_TIME_STEP +
+            RSCHED_NODE_PERIOD;
 
     // ACK back to the node [time(16)], [period(16)], [nextwake(16)],[options(8)]
     uint32_t timenow = rtc_get_time_of_day();
